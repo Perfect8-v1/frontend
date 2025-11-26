@@ -1,0 +1,24 @@
+[
+  {
+    "id": 1,
+    "name": "The Cube T",
+    "parentId": null,
+    "active": true,
+    "imageUrls": [
+      "assets/Images/the-cube-t-detail.jpg",
+      "assets/Images/the-cube-t-full.jpg"
+    ],
+    "textUrl": "assets/Text/The_Cube_T.txt"
+  },
+  {
+    "id": 2,
+    "name": "The Cube S",
+    "parentId": 1,
+    "active": true,
+    "imageUrls": [
+      "assets/Images/perfect8-cube-s.jpg",
+      "assets/Images/Cube-s.jpg"
+    ],
+    "textUrl": "assets/Text/The_Cube_S.txt"
+  }
+]
