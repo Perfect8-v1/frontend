@@ -1,48 +1,66 @@
-class CartItem {
-  final int cartItemId;
-  final int productId;
-  final String productName;
-  final double price;
-  int quantity;
-  
-  CartItem({
-    required this.cartItemId,
-    required this.productId,
-    required this.productName,
-    required this.price,
-    required this.quantity,
-  });
-  
-  factory CartItem.fromJson(Map<String, dynamic> json) => CartItem(
-    cartItemId: json['cartItemId'],
-    productId: json['productId'],
-    productName: json['productName'],
-    price: (json['price'] as num).toDouble(),
-    quantity: json['quantity'],
-  );
-  
-  double get total => price * quantity;
-}
+// lib/models/cart.dart
+
+import 'cart_item.dart';
 
 class Cart {
-  final int cartId;
+  final int? cartId;
+  final int? customerId;
   final List<CartItem> items;
-  
+  final DateTime? createdDate;
+  final DateTime? updatedDate;
+
   Cart({
-    required this.cartId,
+    this.cartId,
+    this.customerId,
     required this.items,
+    this.createdDate,
+    this.updatedDate,
   });
-  
-  factory Cart.fromJson(Map<String, dynamic> json) => Cart(
-    cartId: json['cartId'],
-    items: (json['items'] as List)
-        .map((item) => CartItem.fromJson(item))
-        .toList(),
-  );
-  
-  double get subtotal =>
-      items.fold(0, (sum, item) => sum + item.total);
-  
-  int get totalItems =>
-      items.fold(0, (sum, item) => sum + item.quantity);
+
+  /// Antal unika produkter
+  int get itemCount => items.length;
+
+  /// Totalt antal produkter (med kvantitet)
+  int get totalQuantity => items.fold(0, (sum, item) => sum + item.quantity);
+
+  /// Totalsumma
+  double get totalAmount =>
+      items.fold(0.0, (sum, item) => sum + item.totalPrice);
+
+  /// Är vagnen tom?
+  bool get isEmpty => items.isEmpty;
+
+  /// Från JSON (backend-svar)
+  factory Cart.fromJson(Map<String, dynamic> json) {
+    return Cart(
+      cartId: json['cartId'] as int?,
+      customerId: json['customerId'] as int?,
+      items: (json['items'] as List<dynamic>?)
+              ?.map((item) => CartItem.fromJson(item as Map<String, dynamic>))
+              .toList() ??
+          [],
+      createdDate: json['createdDate'] != null
+          ? DateTime.parse(json['createdDate'] as String)
+          : null,
+      updatedDate: json['updatedDate'] != null
+          ? DateTime.parse(json['updatedDate'] as String)
+          : null,
+    );
+  }
+
+  /// Till JSON
+  Map<String, dynamic> toJson() {
+    return {
+      'cartId': cartId,
+      'customerId': customerId,
+      'items': items.map((item) => item.toJson()).toList(),
+      'createdDate': createdDate?.toIso8601String(),
+      'updatedDate': updatedDate?.toIso8601String(),
+    };
+  }
+
+  /// Tom vagn
+  factory Cart.empty() {
+    return Cart(items: []);
+  }
 }
