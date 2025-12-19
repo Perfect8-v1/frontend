@@ -1,0 +1,30 @@
+name: flutter_perfect8
+description: Perfect8 E-commerce Frontend
+version: 1.0.0
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # HTTP requests
+  http: ^1.1.0
+
+  # State management (enkel och bra för ADHD)
+  provider: ^6.1.1
+
+  # Local storage for tokens
+  shared_preferences: ^2.2.2
+
+  # BCrypt for client-side password hashing
+  bcrypt: ^1.1.3
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true
