@@ -5,6 +5,7 @@ import '../services/auth_service.dart';
 import '../services/product_service.dart';
 import '../services/api_exception.dart';
 import 'product_detail_screen.dart';
+import 'cart_screen.dart';
 
 class ProductListScreen extends StatefulWidget {
   const ProductListScreen({super.key});
@@ -77,6 +78,15 @@ class _ProductListScreenState extends State<ProductListScreen> {
       appBar: AppBar(
         title: const Text('Produkter'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.shopping_cart_outlined),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const CartScreen()),
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: () => _loadProducts(refresh: true),

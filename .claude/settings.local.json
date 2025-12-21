@@ -1,7 +1,16 @@
 {
   "permissions": {
     "allow": [
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(mvn compile:*)",
+      "Bash(flutter pub get:*)",
+      "Bash(flutter analyze:*)",
+      "Bash(git commit:*)",
+      "Bash(git push)",
+      "Bash(git add:*)",
+      "Bash(docker compose exec:*)",
+      "Bash(docker compose:*)",
+      "Bash(dir /s /b \"C:\\\\_Perfect8\\\\backend\\\\shop-service\\\\JwtUtil.java\")"
     ]
   }
 }

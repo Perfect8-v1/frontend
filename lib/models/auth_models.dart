@@ -24,21 +24,26 @@ class LoginResponse {
     this.roles = const [],
   });
 
-  factory LoginResponse.fromJson(Map<String, dynamic> json) => LoginResponse(
-    token: json['accessToken'] ?? json['token'],
-    refreshToken: json['refreshToken'],
-    tokenType: json['tokenType'] ?? 'Bearer',
-    expiresIn: json['expiresIn'] ?? 3600,
-    userId: json['userId'],
-    email: json['email'],
-    firstName: json['firstName'],
-    lastName: json['lastName'],
-    roles: (json['roles'] as List<dynamic>?)
-        ?.map((e) => e.toString())
-        .toList() ?? [],
-  );
+  factory LoginResponse.fromJson(Map<String, dynamic> json) {
+    // User data kan ligga i ett 'user' objekt eller på toppnivån
+    final user = json['user'] as Map<String, dynamic>? ?? json;
 
-  bool get isAdmin => roles.contains('ROLE_ADMIN');
+    return LoginResponse(
+      token: json['accessToken'] ?? json['token'],
+      refreshToken: json['refreshToken'],
+      tokenType: json['tokenType'] ?? 'Bearer',
+      expiresIn: json['expiresIn'] ?? 3600,
+      userId: user['userId'],
+      email: user['email'],
+      firstName: user['firstName'],
+      lastName: user['lastName'],
+      roles: (user['roles'] as List<dynamic>?)
+          ?.map((e) => e.toString())
+          .toList() ?? [],
+    );
+  }
+
+  bool get isAdmin => roles.contains('ADMIN') || roles.contains('ROLE_ADMIN');
 }
 
 /// Customer login response (alias for LoginResponse)

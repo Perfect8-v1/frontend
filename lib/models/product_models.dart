@@ -1,4 +1,14 @@
 // lib/models/product_models.dart
+import '../services/api_config.dart';
+
+/// Helper to convert relative image URLs to full URLs
+String? _toFullImageUrl(String? url) {
+  if (url == null || url.isEmpty) return null;
+  // Absolute URL - return as is
+  if (url.startsWith('http')) return url;
+  // Relative URL - prepend image service URL
+  return '${ApiConfig.imageUrl}$url';
+}
 
 /// Product model matching backend ProductResponse
 class Product {
@@ -54,9 +64,11 @@ class Product {
         ? (json['discountPrice'] as num).toDouble()
         : null,
     brand: json['brand'],
-    imageUrl: json['imageUrl'],
+    imageUrl: _toFullImageUrl(json['imageUrl']),
     galleryImages: (json['galleryImages'] as List<dynamic>?)
-        ?.map((e) => e.toString())
+        ?.map((e) => _toFullImageUrl(e.toString()))
+        .where((e) => e != null)
+        .cast<String>()
         .toList() ?? [],
     stockQuantity: json['stockQuantity'] ?? 0,
     featured: json['featured'] ?? false,

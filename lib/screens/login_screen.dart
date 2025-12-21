@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 import '../services/api_exception.dart';
-import 'product_list_screen.dart';
+import 'main_screen.dart';
 import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -45,10 +45,10 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (!mounted) return;
 
-      // Login successful - navigate to product list
+      // Login successful - navigate to main screen with bottom nav
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
-          builder: (context) => const ProductListScreen(),
+          builder: (context) => const MainScreen(),
         ),
       );
     } on ApiException catch (e) {

@@ -9,14 +9,25 @@ import 'api_exception.dart';
 
 /// Authentication service with client-side password hashing.
 /// Passwords are hashed with BCrypt before leaving the device.
+/// Singleton pattern ensures token is shared across all screens.
 class AuthService {
+  static final AuthService _instance = AuthService._internal();
+  factory AuthService() => _instance;
+  AuthService._internal();
+
   static const String _tokenKey = 'jwt_token';
   static const String _userKey = 'user_data';
+  static const String _rolesKey = 'user_roles';
 
   String? _token;
+  List<String> _roles = [];
+  String? _email;
 
   String? get token => _token;
+  String? get email => _email;
+  List<String> get roles => _roles;
   bool get isLoggedIn => _token != null;
+  bool get isAdmin => _roles.contains('ADMIN') || _roles.contains('ROLE_ADMIN');
 
   // ============================================================
   // Salt Management
@@ -91,7 +102,7 @@ class AuthService {
 
     if (response.statusCode == 200) {
       final loginResponse = LoginResponse.fromJson(jsonDecode(response.body));
-      await _saveToken(loginResponse.token);
+      await _saveUserData(loginResponse.token, loginResponse.roles, loginResponse.email);
       return loginResponse;
     } else {
       throw ApiException.fromResponse(response);
@@ -99,7 +110,7 @@ class AuthService {
   }
 
   /// Customer login with client-side hashing
-  Future<CustomerLoginResponse> customerLogin(String email, String password) async {
+  Future<LoginResponse> customerLogin(String email, String password) async {
     // Step 1: Fetch salt for this user
     final salt = await _getSaltForLogin(email);
 
@@ -117,8 +128,8 @@ class AuthService {
     );
 
     if (response.statusCode == 200) {
-      final loginResponse = CustomerLoginResponse.fromJson(jsonDecode(response.body));
-      await _saveToken(loginResponse.token);
+      final loginResponse = LoginResponse.fromJson(jsonDecode(response.body));
+      await _saveUserData(loginResponse.token, loginResponse.roles, loginResponse.email);
       return loginResponse;
     } else {
       throw ApiException.fromResponse(response);
@@ -155,25 +166,39 @@ class AuthService {
   // Token Management
   // ============================================================
 
-  /// Load saved token from storage
+  /// Load saved token and roles from storage
   Future<void> loadToken() async {
     final prefs = await SharedPreferences.getInstance();
     _token = prefs.getString(_tokenKey);
+    _email = prefs.getString(_userKey);
+    final rolesJson = prefs.getString(_rolesKey);
+    if (rolesJson != null) {
+      _roles = List<String>.from(jsonDecode(rolesJson));
+    }
   }
 
-  /// Save token to storage
-  Future<void> _saveToken(String token) async {
+  /// Save token and user data to storage
+  Future<void> _saveUserData(String token, List<String> roles, String? email) async {
     _token = token;
+    _roles = roles;
+    _email = email;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_tokenKey, token);
+    await prefs.setString(_rolesKey, jsonEncode(roles));
+    if (email != null) {
+      await prefs.setString(_userKey, email);
+    }
   }
 
   /// Logout and clear stored data
   Future<void> logout() async {
     _token = null;
+    _roles = [];
+    _email = null;
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_tokenKey);
     await prefs.remove(_userKey);
+    await prefs.remove(_rolesKey);
   }
 
   /// Get auth headers for API requests

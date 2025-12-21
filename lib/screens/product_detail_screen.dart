@@ -1,17 +1,92 @@
 // lib/screens/product_detail_screen.dart
 import 'package:flutter/material.dart';
 import '../models/product_models.dart';
+import '../services/auth_service.dart';
+import '../services/cart_service.dart';
+import '../services/api_exception.dart';
+import 'cart_screen.dart';
 
-class ProductDetailScreen extends StatelessWidget {
+class ProductDetailScreen extends StatefulWidget {
   final Product product;
 
   const ProductDetailScreen({super.key, required this.product});
+
+  @override
+  State<ProductDetailScreen> createState() => _ProductDetailScreenState();
+}
+
+class _ProductDetailScreenState extends State<ProductDetailScreen> {
+  final _authService = AuthService();
+  late final CartService _cartService;
+  bool _isAddingToCart = false;
+
+  Product get product => widget.product;
+
+  @override
+  void initState() {
+    super.initState();
+    _cartService = CartService(_authService);
+  }
+
+  Future<void> _addToCart() async {
+    setState(() => _isAddingToCart = true);
+
+    try {
+      await _cartService.addToCart(product.productId);
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${product.name} tillagd i kundvagnen'),
+          action: SnackBarAction(
+            label: 'Visa',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const CartScreen()),
+              );
+            },
+          ),
+        ),
+      );
+    } on ApiException catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.message),
+          backgroundColor: Colors.red[700],
+        ),
+      );
+    } catch (e) {
+      debugPrint('Cart error: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Fel: $e'),
+          backgroundColor: Colors.red[700],
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isAddingToCart = false);
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text(product.name),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.shopping_cart_outlined),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const CartScreen()),
+              );
+            },
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -89,16 +164,24 @@ class ProductDetailScreen extends StatelessWidget {
                   SizedBox(
                     width: double.infinity,
                     child: FilledButton.icon(
-                      onPressed: product.inStock ? () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Kundvagn kommer snart!'),
-                            duration: Duration(seconds: 2),
-                          ),
-                        );
-                      } : null,
-                      icon: const Icon(Icons.shopping_cart),
-                      label: Text(product.inStock ? 'Lägg i kundvagn' : 'Slut i lager'),
+                      onPressed: product.inStock && !_isAddingToCart
+                          ? _addToCart
+                          : null,
+                      icon: _isAddingToCart
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Icon(Icons.shopping_cart),
+                      label: Text(
+                        product.inStock
+                            ? (_isAddingToCart ? 'Lägger till...' : 'Lägg i kundvagn')
+                            : 'Slut i lager',
+                      ),
                       style: FilledButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 16),
                       ),
