@@ -62,33 +62,70 @@ class Order {
   });
 
   factory Order.fromJson(Map<String, dynamic> json) => Order(
-    orderId: json['orderId'],
-    orderNumber: json['orderNumber'],
-    customerId: json['customerId'],
-    status: OrderStatus.fromString(json['status']),
+    orderId: json['orderId'] ?? 0,
+    orderNumber: json['orderNumber'] ?? '',
+    customerId: json['customerId'] ?? 0,
+    status: OrderStatus.fromString(json['status'] ?? 'PENDING'),
     items: (json['items'] as List<dynamic>?)
         ?.map((e) => OrderItem.fromJson(e))
         .toList() ?? [],
-    subtotal: (json['subtotal'] as num).toDouble(),
-    shipping: (json['shipping'] as num).toDouble(),
-    tax: (json['tax'] as num).toDouble(),
-    total: (json['total'] as num).toDouble(),
+    // Handle null values with safe casting
+    subtotal: (json['subtotal'] as num?)?.toDouble() ?? 0.0,
+    shipping: (json['shippingCost'] as num?)?.toDouble() ??
+              (json['shipping'] as num?)?.toDouble() ?? 0.0,
+    tax: (json['taxAmount'] as num?)?.toDouble() ??
+         (json['tax'] as num?)?.toDouble() ?? 0.0,
+    total: (json['totalAmount'] as num?)?.toDouble() ??
+           (json['total'] as num?)?.toDouble() ?? 0.0,
     currency: json['currency'] ?? 'SEK',
-    shippingAddress: Address.fromJson(json['shippingAddress']),
-    billingAddress: Address.fromJson(json['billingAddress']),
-    paymentMethod: json['paymentMethod'],
-    paymentStatus: json['paymentStatus'],
+    // Address can be string or object from backend
+    shippingAddress: _parseAddress(json['shippingAddress']),
+    billingAddress: _parseAddress(json['billingAddress'] ?? json['shippingAddress']),
+    paymentMethod: json['paymentMethod'] ?? 'INVOICE',
+    paymentStatus: json['paymentStatus'] ?? 'PENDING',
     trackingNumber: json['trackingNumber'],
     trackingUrl: json['trackingUrl'],
     notes: json['notes'],
-    createdDate: DateTime.parse(json['createdDate']),
-    shippedDate: json['shippedDate'] != null 
-        ? DateTime.parse(json['shippedDate']) 
+    createdDate: json['createdDate'] != null
+        ? DateTime.parse(json['createdDate'])
+        : DateTime.now(),
+    shippedDate: json['shippedDate'] != null
+        ? DateTime.parse(json['shippedDate'])
         : null,
-    deliveredDate: json['deliveredDate'] != null 
-        ? DateTime.parse(json['deliveredDate']) 
+    deliveredDate: json['deliveredDate'] != null
+        ? DateTime.parse(json['deliveredDate'])
         : null,
   );
+}
+
+/// Parse address from either string or object format
+Address _parseAddress(dynamic addressData) {
+  if (addressData == null) {
+    return Address(
+      firstName: '',
+      lastName: '',
+      street: '',
+      postalCode: '',
+      city: '',
+      country: 'Sverige',
+    );
+  }
+
+  // If it's a string (backend returns comma-separated format)
+  if (addressData is String) {
+    final parts = addressData.split(', ');
+    return Address(
+      firstName: '',
+      lastName: '',
+      street: parts.isNotEmpty ? parts[0] : '',
+      city: parts.length > 1 ? parts[1] : '',
+      country: parts.length > 2 ? parts[2] : 'Sverige',
+      postalCode: parts.length > 3 ? parts[3] : '',
+    );
+  }
+
+  // If it's an object
+  return Address.fromJson(addressData as Map<String, dynamic>);
 }
 
 class OrderItem {
@@ -111,13 +148,14 @@ class OrderItem {
   });
 
   factory OrderItem.fromJson(Map<String, dynamic> json) => OrderItem(
-    orderItemId: json['orderItemId'],
-    productId: json['productId'],
-    productName: json['productName'],
+    orderItemId: json['orderItemId'] ?? 0,
+    productId: json['productId'] ?? 0,
+    productName: json['productName'] ?? '',
     variantName: json['variantName'],
-    quantity: json['quantity'],
-    unitPrice: (json['unitPrice'] as num).toDouble(),
-    subtotal: (json['subtotal'] as num).toDouble(),
+    quantity: json['quantity'] ?? 1,
+    unitPrice: (json['unitPrice'] as num?)?.toDouble() ?? 0.0,
+    subtotal: (json['subtotal'] as num?)?.toDouble() ??
+              (json['totalPrice'] as num?)?.toDouble() ?? 0.0,
   );
 }
 
@@ -141,13 +179,13 @@ class Address {
   });
 
   factory Address.fromJson(Map<String, dynamic> json) => Address(
-    firstName: json['firstName'],
-    lastName: json['lastName'],
-    street: json['street'],
-    postalCode: json['postalCode'],
-    city: json['city'],
-    country: json['country'],
-    phone: json['phone'],
+    firstName: json['firstName'] ?? '',
+    lastName: json['lastName'] ?? '',
+    street: json['street'] ?? json['streetAddress'] ?? '',
+    postalCode: json['postalCode'] ?? '',
+    city: json['city'] ?? '',
+    country: json['country'] ?? 'Sverige',
+    phone: json['phone'] ?? json['phoneNumber'],
   );
 
   Map<String, dynamic> toJson() => {
