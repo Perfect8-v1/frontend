@@ -98,8 +98,7 @@ class _AdminUploadScreenState extends State<AdminUploadScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Admin - Bilduppladdning'),
-        automaticallyImplyLeading: false,
+        title: const Text('Ladda upp Bilder'),
         actions: [
           IconButton(
             icon: const Icon(Icons.link),

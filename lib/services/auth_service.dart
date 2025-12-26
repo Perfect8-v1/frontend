@@ -18,13 +18,16 @@ class AuthService {
   static const String _tokenKey = 'jwt_token';
   static const String _userKey = 'user_data';
   static const String _rolesKey = 'user_roles';
+  static const String _userIdKey = 'user_id';
 
   String? _token;
   List<String> _roles = [];
   String? _email;
+  int? _userId;
 
   String? get token => _token;
   String? get email => _email;
+  int? get userId => _userId;
   List<String> get roles => _roles;
   bool get isLoggedIn => _token != null;
   bool get isAdmin => _roles.contains('ADMIN') || _roles.contains('ROLE_ADMIN');
@@ -36,7 +39,7 @@ class AuthService {
   /// Fetch salt for login (existing user)
   Future<String> _getSaltForLogin(String email) async {
     final response = await http.get(
-      Uri.parse('${ApiConfig.adminUrl}/api/auth/salt?email=$email'),
+      Uri.parse('${ApiConfig.adminUrl}/api/v1/auth/salt/?email=$email'),
       headers: {'Content-Type': 'application/json'},
     );
 
@@ -56,7 +59,7 @@ class AuthService {
   /// Fetch salt for registration (new user)
   Future<String> _getSaltForRegistration(String email) async {
     final response = await http.get(
-      Uri.parse('${ApiConfig.adminUrl}/api/auth/salt?email=$email&forRegistration=true'),
+      Uri.parse('${ApiConfig.adminUrl}/api/v1/auth/salt/?email=$email&forRegistration=true'),
       headers: {'Content-Type': 'application/json'},
     );
 
@@ -92,7 +95,7 @@ class AuthService {
 
     // Step 3: Send hash to backend
     final response = await http.post(
-      Uri.parse('${ApiConfig.adminUrl}/api/auth/login'),
+      Uri.parse('${ApiConfig.adminUrl}/api/v1/auth/login/'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
         'email': email,
@@ -102,7 +105,7 @@ class AuthService {
 
     if (response.statusCode == 200) {
       final loginResponse = LoginResponse.fromJson(jsonDecode(response.body));
-      await _saveUserData(loginResponse.token, loginResponse.roles, loginResponse.email);
+      await _saveUserData(loginResponse.token, loginResponse.roles, loginResponse.email, loginResponse.userId);
       return loginResponse;
     } else {
       throw ApiException.fromResponse(response);
@@ -119,7 +122,7 @@ class AuthService {
 
     // Step 3: Send hash to backend
     final response = await http.post(
-      Uri.parse('${ApiConfig.adminUrl}/api/auth/login'),
+      Uri.parse('${ApiConfig.adminUrl}/api/v1/auth/login/'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
         'email': email,
@@ -129,7 +132,7 @@ class AuthService {
 
     if (response.statusCode == 200) {
       final loginResponse = LoginResponse.fromJson(jsonDecode(response.body));
-      await _saveUserData(loginResponse.token, loginResponse.roles, loginResponse.email);
+      await _saveUserData(loginResponse.token, loginResponse.roles, loginResponse.email, loginResponse.userId);
       return loginResponse;
     } else {
       throw ApiException.fromResponse(response);
@@ -146,7 +149,7 @@ class AuthService {
 
     // Step 3: Send hash + salt to backend
     final response = await http.post(
-      Uri.parse('${ApiConfig.adminUrl}/api/auth/register'),
+      Uri.parse('${ApiConfig.adminUrl}/api/v1/auth/register/'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
         'email': request.email,
@@ -171,6 +174,7 @@ class AuthService {
     final prefs = await SharedPreferences.getInstance();
     _token = prefs.getString(_tokenKey);
     _email = prefs.getString(_userKey);
+    _userId = prefs.getInt(_userIdKey);
     final rolesJson = prefs.getString(_rolesKey);
     if (rolesJson != null) {
       _roles = List<String>.from(jsonDecode(rolesJson));
@@ -178,15 +182,19 @@ class AuthService {
   }
 
   /// Save token and user data to storage
-  Future<void> _saveUserData(String token, List<String> roles, String? email) async {
+  Future<void> _saveUserData(String token, List<String> roles, String? email, int? userId) async {
     _token = token;
     _roles = roles;
     _email = email;
+    _userId = userId;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_tokenKey, token);
     await prefs.setString(_rolesKey, jsonEncode(roles));
     if (email != null) {
       await prefs.setString(_userKey, email);
+    }
+    if (userId != null) {
+      await prefs.setInt(_userIdKey, userId);
     }
   }
 
@@ -195,10 +203,12 @@ class AuthService {
     _token = null;
     _roles = [];
     _email = null;
+    _userId = null;
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_tokenKey);
     await prefs.remove(_userKey);
     await prefs.remove(_rolesKey);
+    await prefs.remove(_userIdKey);
   }
 
   /// Get auth headers for API requests

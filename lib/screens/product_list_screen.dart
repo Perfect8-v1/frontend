@@ -8,7 +8,9 @@ import 'product_detail_screen.dart';
 import 'cart_screen.dart';
 
 class ProductListScreen extends StatefulWidget {
-  const ProductListScreen({super.key});
+  final VoidCallback? onCartUpdated;
+
+  const ProductListScreen({super.key, this.onCartUpdated});
 
   @override
   State<ProductListScreen> createState() => _ProductListScreenState();
@@ -149,7 +151,10 @@ class _ProductListScreenState extends State<ProductListScreen> {
             _loadProducts();
             return const Center(child: CircularProgressIndicator());
           }
-          return _ProductCard(product: _products[index]);
+          return _ProductCard(
+            product: _products[index],
+            onCartUpdated: widget.onCartUpdated,
+          );
         },
       ),
     );
@@ -158,8 +163,9 @@ class _ProductListScreenState extends State<ProductListScreen> {
 
 class _ProductCard extends StatelessWidget {
   final Product product;
+  final VoidCallback? onCartUpdated;
 
-  const _ProductCard({required this.product});
+  const _ProductCard({required this.product, this.onCartUpdated});
 
   @override
   Widget build(BuildContext context) {
@@ -169,7 +175,10 @@ class _ProductCard extends StatelessWidget {
         onTap: () {
           Navigator.of(context).push(
             MaterialPageRoute(
-              builder: (context) => ProductDetailScreen(product: product),
+              builder: (context) => ProductDetailScreen(
+                product: product,
+                onCartUpdated: onCartUpdated,
+              ),
             ),
           );
         },
@@ -182,9 +191,9 @@ class _ProductCard extends StatelessWidget {
               child: Container(
                 width: double.infinity,
                 color: Colors.grey[200],
-                child: product.imageUrl != null
+                child: product.smallImageUrl != null
                     ? Image.network(
-                        product.imageUrl!,
+                        product.smallImageUrl!,
                         fit: BoxFit.cover,
                         errorBuilder: (_, __, ___) => const _PlaceholderImage(),
                       )

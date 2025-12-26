@@ -1,4 +1,26 @@
 // lib/models/cart_models.dart
+import '../services/api_config.dart';
+
+/// Helper to convert image URLs to proper HTTPS URLs via nginx
+String? _toFullImageUrl(String? url) {
+  if (url == null || url.isEmpty) return null;
+
+  // If URL contains :8084 (direct port access), strip it and use nginx path
+  if (url.contains(':8084')) {
+    final portIndex = url.indexOf(':8084');
+    final pathStart = url.indexOf('/', portIndex + 5);
+    if (pathStart != -1) {
+      url = url.substring(pathStart);
+    }
+  }
+
+  if (url.startsWith('https://')) return url;
+  if (url.startsWith('http://')) {
+    return url.replaceFirst('http://', 'https://');
+  }
+
+  return '${ApiConfig.imageUrl}$url';
+}
 
 /// Cart model matching backend CartResponse
 class Cart {
@@ -92,7 +114,7 @@ class CartItem {
     productId: json['productId'] ?? 0,
     productName: json['productName'] ?? '',
     productSku: json['productSku'],
-    imageUrl: json['imageUrl'] ?? json['thumbnailUrl'],
+    imageUrl: _toFullImageUrl(json['imageUrl'] ?? json['thumbnailUrl']),
     quantity: json['quantity'] ?? 1,
     unitPrice: (json['unitPrice'] as num?)?.toDouble() ?? 0,
     totalPrice: (json['totalPrice'] as num?)?.toDouble() ??

@@ -4,6 +4,7 @@ import '../models/cart_models.dart';
 import '../services/auth_service.dart';
 import '../services/cart_service.dart';
 import '../services/api_exception.dart';
+import 'checkout_screen.dart';
 
 class CartScreen extends StatefulWidget {
   const CartScreen({super.key});
@@ -251,11 +252,12 @@ class _CartScreenState extends State<CartScreen> {
               width: double.infinity,
               child: FilledButton(
                 onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Checkout kommer snart!'),
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => CheckoutScreen(cart: _cart!),
                     ),
-                  );
+                  ).then((_) => _loadCart()); // Reload cart when returning
                 },
                 style: FilledButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),

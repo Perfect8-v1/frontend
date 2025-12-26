@@ -8,8 +8,9 @@ import 'cart_screen.dart';
 
 class ProductDetailScreen extends StatefulWidget {
   final Product product;
+  final VoidCallback? onCartUpdated;
 
-  const ProductDetailScreen({super.key, required this.product});
+  const ProductDetailScreen({super.key, required this.product, this.onCartUpdated});
 
   @override
   State<ProductDetailScreen> createState() => _ProductDetailScreenState();
@@ -34,6 +35,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
     try {
       await _cartService.addToCart(product.productId);
       if (!mounted) return;
+
+      widget.onCartUpdated?.call();
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -97,9 +100,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               aspectRatio: 1,
               child: Container(
                 color: Colors.grey[200],
-                child: product.imageUrl != null
+                child: product.largeImageUrl != null
                     ? Image.network(
-                        product.imageUrl!,
+                        product.largeImageUrl!,
                         fit: BoxFit.cover,
                         errorBuilder: (_, __, ___) => _buildPlaceholder(),
                       )

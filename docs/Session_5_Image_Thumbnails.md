@@ -1,13 +1,13 @@
-# Session 5 - Image Thumbnails Fix
+# Session 5 - Image Thumbnails & Produkt-Bildkoppling
 
-**Datum:** 2025-12-20
-**Status:** Pågående - väntar på deploy
+**Datum:** 2025-12-20 - 2025-12-21
+**Status:** Pågående
 
 ---
 
 ## Sammanfattning
 
-Fortsatte felsökning av bilduppladdning från Session 4. Thumbnails genererades men visades inte i Flutter-appen.
+Fixade thumbnails-visning i Flutter och byggde admin-UI för att koppla bilder till produkter. Löste flera autentiseringsproblem med Spring Security roller.
 
 ---
 
@@ -22,10 +22,10 @@ docker compose exec -u root image-service mkdir -p /app/uploads/products /app/up
 docker compose exec -u root image-service chmod -R 777 /app/uploads
 ```
 
-### 2. Thumbnails visas inte i appen (delvis löst)
+### 2. Thumbnails visas inte - fel URL (löst)
 **Symptom:** Ikoner visas istället för bilder i Flutter-appen
 **Orsak:** URL:er i databasen pekar på `localhost:8084` istället för `p8.rantila.com:8084`
-**Lösning:** Lade till `app.base-url` konfiguration:
+**Lösning:**
 
 **application.properties:**
 ```properties
@@ -37,57 +37,79 @@ app.base-url=${APP_BASE_URL:http://localhost:8084}
 - APP_BASE_URL=http://p8.rantila.com:8084
 ```
 
+### 3. 403 Forbidden vid produktuppdatering (löst)
+**Symptom:** Admin får 403 när de försöker koppla bild till produkt
+**Orsak:** Spring Security `hasRole("ADMIN")` kräver `ROLE_ADMIN` authority, men JWT hade bara `ADMIN`
+**Lösning:** Lade till ROLE_-prefix i JwtUtil.extractAuthorities() i **alla 4 services**:
+
+```java
+for (String role : roles) {
+    // Add ROLE_ prefix if not present (required for hasRole() checks)
+    String authority = role.startsWith("ROLE_") ? role : "ROLE_" + role;
+    authorities.add(new SimpleGrantedAuthority(authority));
+}
+```
+
+**Påverkade filer:**
+- `shop-service/src/main/java/com/perfect8/shop/util/JwtUtil.java`
+- `image-service/src/main/java/com/perfect8/image/util/JwtUtil.java`
+- `email-service/src/main/java/com/perfect8/email/util/JwtUtil.java`
+- `blog-service/src/main/java/com/perfect8/blog/security/JwtTokenProvider.java`
+
+### 4. JSON Recursion Error (löst)
+**Symptom:** `FormatException: Unexpected character` vid API-anrop
+**Orsak:** `getProductionSafe()` metod i GlobalExceptionHandler returnerade ErrorResponse som serialiserades rekursivt
+**Lösning:** Lade till `@JsonIgnore` annotation:
+```java
+@JsonIgnore
+public ErrorResponse getProductionSafe() { ... }
+```
+
+### 5. 400 Bad Request vid produktuppdatering (pågående)
+**Symptom:** Efter ROLE_-fix, nu 400-fel istället för 403
+**Möjlig orsak:**
+- `price` validering kräver värde > 0
+- Saknade fält i request body
+**Lösning:** Uppdaterade `_attachImage()` i Flutter:
+- Lade till fler fält (description, categoryId, weight, tags)
+- Säkerställer price > 0
+- Bättre debug-logging
+- Parsning av felmeddelanden
+
 ---
 
-## Ändringar gjorda (ej pushade)
+## Nya filer skapade
 
-### Backend-filer:
+### Flutter: Admin Product Images Screen
+**Fil:** `lib/screens/admin_product_images_screen.dart`
 
-1. **image-service/src/main/resources/application.properties**
-   - Lade till: `app.base-url=${APP_BASE_URL:http://localhost:8084}`
-
-2. **image-service/src/main/java/.../ImageProcessingService.java**
-   - Uppdaterade `ensureDirectoriesExist()` att inkludera "products"
-
-3. **image-service/src/main/java/.../ImageService.java**
-   - Uppdaterade `ensureDirectoriesExist()` att inkludera "products"
-
-4. **docker-compose.yml**
-   - Lade till: `APP_BASE_URL=http://p8.rantila.com:8084`
+Admin-UI för att koppla bilder till produkter:
+- Produktlista till vänster (visar befintlig bild eller "Ingen bild")
+- Bildgrid till höger (thumbnails från image-service)
+- Välj en produkt + en bild, tryck "Koppla bild"
+- PUT-anrop till shop-service för att uppdatera produktens imageUrl
 
 ---
 
-## Att göra imorgon
+## Deploy-process
 
-### 1. Pusha och deploya
+### Windows (lokalt):
 ```bash
 cd C:\_Perfect8\backend
 git add .
-git commit -m "Fix image URL base path and add products directory"
+git commit -m "Fix ROLE_ prefix in JWT auth for all services"
 git push
+```
 
-# På servern (SSH):
+### Server (SSH):
+```bash
 cd ~/backend
 git pull
-docker compose build image-service
-docker compose up -d image-service
-```
 
-### 2. Fixa befintliga bilder i databasen
-Kör SQL mot imageDB:
-```sql
-UPDATE images
-SET thumbnail_url = REPLACE(thumbnail_url, 'localhost:8084', 'p8.rantila.com:8084'),
-    small_url = REPLACE(small_url, 'localhost:8084', 'p8.rantila.com:8084'),
-    medium_url = REPLACE(medium_url, 'localhost:8084', 'p8.rantila.com:8084'),
-    large_url = REPLACE(large_url, 'localhost:8084', 'p8.rantila.com:8084'),
-    original_url = REPLACE(original_url, 'localhost:8084', 'p8.rantila.com:8084');
+# Bygg om alla services med ändrad JwtUtil
+docker compose build shop-service image-service email-service blog-service
+docker compose up -d
 ```
-
-### 3. Testa i Flutter-appen
-- Logga in som admin
-- Gå till Admin-fliken
-- Verifiera att uppladdade bilder visar thumbnails korrekt
 
 ---
 
@@ -110,16 +132,25 @@ SET thumbnail_url = REPLACE(thumbnail_url, 'localhost:8084', 'p8.rantila.com:808
 - the-cube-t-full.jpg (152KB)
 - the-cube-t-detail.jpg (119KB)
 
-Alla finns på servern i `/app/uploads/` med alla storlekar genererade.
+---
+
+## Kvar att göra
+
+1. Verifiera att 400-felet är löst efter senaste Flutter-fix
+2. Testa att koppla bild till produkt
+3. Verifiera att bilderna visas i produktlistan
 
 ---
 
-## Nästa steg efter thumbnails fungerar
+## Teknisk insikt: Spring Security hasRole()
 
-1. Visa bilder i produktlistan (Flutter)
-2. Koppla bilder till produkter via referenceType/referenceId
-3. Bildgalleri i produktdetaljer
+```
+hasRole("ADMIN")     -> Kräver ROLE_ADMIN authority
+hasAuthority("ADMIN") -> Kräver ADMIN authority (utan prefix)
+```
+
+JWT-token från admin-service innehåller: `"roles": ["ADMIN"]`
+
+Därför måste alla services som använder `hasRole()` lägga till ROLE_-prefix vid token-parsning.
 
 ---
-
-*God natt!*

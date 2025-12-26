@@ -105,6 +105,24 @@ class _AdminProductImagesScreenState extends State<AdminProductImagesScreen> {
       final imageUrl = _selectedImage!['thumbnailUrl'] ??
                        _selectedImage!['originalUrl'] ?? '';
 
+      // Build request body with all required fields including sku
+      final requestBody = {
+        'name': _selectedProduct!.name,
+        'description': _selectedProduct!.description ?? '',
+        'sku': _selectedProduct!.sku ?? 'SKU-${_selectedProduct!.productId}',
+        'price': _selectedProduct!.price > 0 ? _selectedProduct!.price : 1.0,
+        'discountPrice': _selectedProduct!.discountPrice,
+        'stockQuantity': _selectedProduct!.stockQuantity,
+        'imageUrl': imageUrl,
+        'categoryId': _selectedProduct!.categoryId,
+        'featured': _selectedProduct!.featured,
+        'active': _selectedProduct!.active,
+        'weight': _selectedProduct!.weight,
+        'tags': _selectedProduct!.tags,
+      };
+
+      debugPrint('Sending request body: ${jsonEncode(requestBody)}');
+
       // Update the product with the new image URL
       final response = await http.put(
         Uri.parse('${ApiConfig.shopUrl}/api/products/${_selectedProduct!.productId}'),
@@ -112,15 +130,11 @@ class _AdminProductImagesScreenState extends State<AdminProductImagesScreen> {
           'Authorization': 'Bearer ${_authService.token}',
           'Content-Type': 'application/json',
         },
-        body: jsonEncode({
-          'name': _selectedProduct!.name,
-          'price': _selectedProduct!.price,
-          'stockQuantity': _selectedProduct!.stockQuantity,
-          'imageUrl': imageUrl,
-          'featured': _selectedProduct!.featured,
-          'active': _selectedProduct!.active,
-        }),
+        body: jsonEncode(requestBody),
       );
+
+      debugPrint('Response status: ${response.statusCode}');
+      debugPrint('Response body: ${response.body}');
 
       if (response.statusCode == 200) {
         // Reload products to show updated image
@@ -140,9 +154,16 @@ class _AdminProductImagesScreenState extends State<AdminProductImagesScreen> {
           );
         }
       } else {
-        throw Exception('Kunde inte uppdatera produkt: ${response.statusCode}');
+        // Parse error response for better message
+        String errorMsg = 'Status: ${response.statusCode}';
+        try {
+          final errorData = jsonDecode(response.body);
+          errorMsg = errorData['message'] ?? errorData['error'] ?? errorMsg;
+        } catch (_) {}
+        throw Exception(errorMsg);
       }
     } catch (e) {
+      debugPrint('Error: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -253,9 +274,9 @@ class _AdminProductImagesScreenState extends State<AdminProductImagesScreen> {
                             leading: SizedBox(
                               width: 50,
                               height: 50,
-                              child: product.imageUrl != null
+                              child: product.thumbnailImageUrl != null
                                   ? Image.network(
-                                      product.imageUrl!,
+                                      product.thumbnailImageUrl!,
                                       fit: BoxFit.cover,
                                       errorBuilder: (_, __, ___) =>
                                           const Icon(Icons.image_outlined),
@@ -267,11 +288,11 @@ class _AdminProductImagesScreenState extends State<AdminProductImagesScreen> {
                             ),
                             title: Text(product.name),
                             subtitle: Text(
-                              product.imageUrl != null
+                              product.thumbnailImageUrl != null
                                   ? 'Har bild'
                                   : 'Ingen bild',
                               style: TextStyle(
-                                color: product.imageUrl != null
+                                color: product.thumbnailImageUrl != null
                                     ? Colors.green
                                     : Colors.orange,
                               ),
