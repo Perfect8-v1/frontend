@@ -5,6 +5,7 @@ import '../services/cart_service.dart';
 import 'product_list_screen.dart';
 import 'cart_screen.dart';
 import 'profile_screen.dart';
+import 'blog_list_screen.dart';
 import 'admin_screen.dart';
 
 class MainScreen extends StatefulWidget {
@@ -48,8 +49,9 @@ class MainScreenState extends State<MainScreen> {
   List<Widget> get _screens {
     final screens = <Widget>[
       ProductListScreen(onCartUpdated: refreshCartCount),
-      const CartScreen(),
+      CartScreen(onCartUpdated: refreshCartCount),
       const ProfileScreen(),
+      const BlogListScreen(),
     ];
 
     if (_authService.isAdmin) {
@@ -75,6 +77,11 @@ class MainScreenState extends State<MainScreen> {
         icon: Icon(Icons.person_outline),
         activeIcon: Icon(Icons.person),
         label: 'Profil',
+      ),
+      const BottomNavigationBarItem(
+        icon: Icon(Icons.article_outlined),
+        activeIcon: Icon(Icons.article),
+        label: 'Blogg',
       ),
     ];
 

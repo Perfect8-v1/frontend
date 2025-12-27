@@ -14,6 +14,7 @@ class ApiConfig {
   // nginx strips /v1/ before forwarding to backend
   static String get adminUrl => baseUrl;  // /api/v1/auth/* -> admin:8081/api/auth/*
   static String get blogUrl => baseUrl;   // /api/v1/blog/* -> blog:8082/api/blog/*
+  static String get postsUrl => baseUrl;  // /api/v1/posts/* -> blog:8082/api/posts/*
   static String get emailUrl => baseUrl;  // /api/v1/email/* -> email:8083/api/email/*
   static String get imageUrl => baseUrl;  // /api/v1/images/* -> image:8084/api/images/*
   static String get shopUrl => baseUrl;   // /api/v1/products/* -> shop:8085/api/products/*

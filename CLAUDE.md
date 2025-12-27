@@ -3,7 +3,7 @@
 **Flutter-frontend för Perfect8 E-commerce**
 
 **Version:** 1.0
-**Uppdaterad:** 2025-12-19
+**Uppdaterad:** 2025-12-24
 
 ---
 
@@ -14,7 +14,7 @@
 1. **EN Dart-fil per steg** - Spara och verifiera innan nästa fil
 2. **Kompletta filer** - Inga "ändra rad 47", alltid hela filen
 3. **Max 2 alternativ** - För många val skapar beslutsvånda
-4. **Vänta på svar** - En fråga åt gången
+4. **Vänta på svar** - En fråga eller kommando åt gången
 5. **Kort och konkret** - Inga långa förklaringar
 6. **Hot reload** - Testa visuellt efter varje ändring
 
@@ -43,8 +43,36 @@ Strukturöversikt finns i `docs/struktur.txt`.
 | image-service | 8084 | Bildhantering, thumbnails |
 | shop-service | 8085 | Produkter, ordrar, kundvagn |
 
-**Base URL:** `http://p8.rantila.com`
+**Base URL:** `https://p8.rantila.com`
 **Health check:** `/actuator/health` på varje service
+
+### Nginx-konfiguration
+- **Plats:** `/etc/nginx/nginx.conf` (INTE sites-enabled!)
+- **Lokal kopia:** `C:\_Perfect8\backend\nginx\nginx.conf`
+- **Uppdatering:** Kopiera lokal fil till server via GitHub
+
+---
+
+## SINGLE POINT OF TRUTH
+
+### Grundprincip
+**GitHub är källan till sanning.** All kod pushas till GitHub och pullas på servern.
+
+### Regler
+1. **Ändra ALDRIG kod direkt på servern** - Alla ändringar görs lokalt, pushas till GitHub, pullas på server
+2. **Bygg ALDRIG jar-filer på Windows** - Backend byggs på Linux-servern med `mvn clean package`
+3. **Publik portfolio** - Koden ligger i publik GitHub-repo och är del av våra portfolios
+
+### Deploy-flöde
+```
+Lokal utveckling → git push → Server: git pull → mvn clean package → systemctl restart
+```
+
+### Varför?
+- Spårbarhet - all historik finns i Git
+- Reproducerbarhet - samma kod överallt
+- Portfolio - visar professionellt arbetsflöde
+- Samarbete - andra kan bidra via PR
 
 ---
 
@@ -77,7 +105,7 @@ lib/
 
 ## BYGGORDNING (Ny funktionalitet)
 
-1. **models/** - Datamodell som matchar backend DTO
+1. **models/** - Datamodell som matchar backend entity
 2. **services/** - API-anrop med error handling
 3. **providers/** - State management (om behövs)
 4. **widgets/** - Återanvändbara UI-komponenter
@@ -90,7 +118,7 @@ lib/
 ### Namnkonventioner
 
 - **Fältnamn:** SAMMA som backend (`customerId`, inte `id`)
-- **Modeller:** Matchar backend DTOs exakt
+- **Modeller:** Matchar backend entities exakt
 - **Filer:** snake_case (`auth_service.dart`)
 - **Klasser:** PascalCase (`AuthService`)
 - **Variabler:** camelCase (`isLoading`)
@@ -191,18 +219,26 @@ class ApiException implements Exception {
 
 ## AUTENTISERING
 
-### Token-flöde
+### Login-flöde (med salt)
 
-1. **Login** → Backend returnerar JWT token
-2. **Spara** → `SharedPreferences` lagrar token
-3. **Använd** → `Authorization: Bearer <token>` i headers
-4. **Refresh** → Hantera 401 med token refresh eller logout
+1. **Hämta salt** → `GET /api/v1/auth/salt/?email=...` → returnerar BCrypt-salt
+2. **Hasha lösenord** → Klienten hashar lösenord med BCrypt + salt
+3. **Skicka hash** → `POST /api/v1/auth/login/` med `{email, passwordHash}`
+4. **Få token** → Backend returnerar JWT token
+5. **Spara** → `SharedPreferences` lagrar token + userId + roles
+6. **Använd** → `Authorization: Bearer <token>` i headers
 
-### Auth endpoints
+### Registrering
 
-- **Admin login:** `POST /api/admin/auth/login` (port 8081)
-- **Customer login:** `POST /api/customers/auth/login` (port 8085)
-- **Register:** `POST /api/customers/auth/register` (port 8085)
+1. **Hämta ny salt** → `GET /api/v1/auth/salt/?email=...&forRegistration=true`
+2. **Hasha lösenord** → Klienten hashar med BCrypt + salt
+3. **Registrera** → `POST /api/v1/auth/register/` med `{email, passwordHash, passwordSalt, firstName, lastName}`
+
+### Auth endpoints (via nginx)
+
+- **Salt:** `GET /api/v1/auth/salt/`
+- **Login:** `POST /api/v1/auth/login/`
+- **Register:** `POST /api/v1/auth/register/`
 
 ---
 
@@ -210,18 +246,22 @@ class ApiException implements Exception {
 
 ### Implementerat
 - [x] Health check för alla 5 services
-- [x] Auth models & service
+- [x] Auth models & service (med salt-flöde)
 - [x] Cart models & service
-- [x] Product service (saknar models)
+- [x] Product models & service (CRUD)
+- [x] Customer models & service
+- [x] Order models & service
 - [x] API exception handling
 - [x] Paginated response wrapper
+- [x] Login/Register UI
+- [x] Produkt-lista UI (admin)
+- [x] Produkt CRUD UI (admin)
+- [x] Bildhantering UI (admin)
 
-### Saknas
-- [ ] Product models (tom fil)
-- [ ] Login/Register UI
-- [ ] Produkt-lista UI
+### Saknas/Pågående
 - [ ] Kundvagn UI
-- [ ] State management med Provider
+- [ ] Checkout-flöde
+- [ ] Kundsida (ej admin)
 
 ---
 

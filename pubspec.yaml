@@ -24,6 +24,10 @@ dependencies:
   # Image picker for admin uploads
   image_picker: ^1.0.4
 
+  # PDF generation and printing
+  pdf: ^3.10.8
+  printing: ^5.12.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

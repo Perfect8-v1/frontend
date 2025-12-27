@@ -7,7 +7,9 @@ import '../services/api_exception.dart';
 import 'checkout_screen.dart';
 
 class CartScreen extends StatefulWidget {
-  const CartScreen({super.key});
+  final VoidCallback? onCartUpdated;
+
+  const CartScreen({super.key, this.onCartUpdated});
 
   @override
   State<CartScreen> createState() => _CartScreenState();
@@ -40,6 +42,8 @@ class _CartScreenState extends State<CartScreen> {
         _cart = cart;
         _isLoading = false;
       });
+      // Update badge in navigation bar
+      widget.onCartUpdated?.call();
     } on ApiException catch (e) {
       setState(() {
         _errorMessage = e.message;
@@ -62,6 +66,7 @@ class _CartScreenState extends State<CartScreen> {
     try {
       final cart = await _cartService.updateQuantity(item.productId, newQuantity);
       setState(() => _cart = cart);
+      widget.onCartUpdated?.call();
     } on ApiException catch (e) {
       _showError(e.message);
     } catch (e) {
@@ -73,6 +78,7 @@ class _CartScreenState extends State<CartScreen> {
     try {
       final cart = await _cartService.removeItem(item.productId);
       setState(() => _cart = cart);
+      widget.onCartUpdated?.call();
       _showMessage('${item.productName} borttagen');
     } on ApiException catch (e) {
       _showError(e.message);
@@ -105,6 +111,7 @@ class _CartScreenState extends State<CartScreen> {
     try {
       await _cartService.clearCart();
       setState(() => _cart = Cart());
+      widget.onCartUpdated?.call();
       _showMessage('Kundvagnen är tömd');
     } on ApiException catch (e) {
       _showError(e.message);

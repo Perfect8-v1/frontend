@@ -66,7 +66,44 @@ class OrderService {
     if (response.statusCode == 200 || response.statusCode == 201) {
       final json = jsonDecode(response.body);
       final data = json['data'] ?? json;
-      return Order.fromJson(data);
+      final order = Order.fromJson(data);
+
+      // Backend may not return items in response - use cart items instead
+      if (order.items.isEmpty && cart.items.isNotEmpty) {
+        return Order(
+          orderId: order.orderId,
+          orderNumber: order.orderNumber,
+          customerId: order.customerId,
+          status: order.status,
+          items: cart.items
+              .map((item) => OrderItem(
+                    orderItemId: 0,
+                    productId: item.productId,
+                    productName: item.productName,
+                    quantity: item.quantity,
+                    unitPrice: item.unitPrice,
+                    subtotal: item.totalPrice,
+                  ))
+              .toList(),
+          subtotal: order.subtotal,
+          shipping: order.shipping,
+          tax: order.tax,
+          total: order.total,
+          currency: order.currency,
+          shippingAddress: order.shippingAddress,
+          billingAddress: order.billingAddress,
+          paymentMethod: order.paymentMethod,
+          paymentStatus: order.paymentStatus,
+          trackingNumber: order.trackingNumber,
+          trackingUrl: order.trackingUrl,
+          notes: order.notes,
+          createdDate: order.createdDate,
+          shippedDate: order.shippedDate,
+          deliveredDate: order.deliveredDate,
+        );
+      }
+
+      return order;
     } else {
       throw ApiException.fromResponse(response);
     }

@@ -8,6 +8,8 @@ import '../services/order_service.dart';
 import '../services/cart_service.dart';
 import '../services/customer_service.dart';
 import '../services/api_exception.dart';
+import '../services/pdf_service.dart';
+import '../services/email_service.dart';
 
 class CheckoutScreen extends StatefulWidget {
   final Cart cart;
@@ -24,6 +26,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   late final OrderService _orderService;
   late final CartService _cartService;
   late final CustomerService _customerService;
+  late final EmailService _emailService;
 
   bool _isProcessing = false;
   bool _isLoadingProfile = true;
@@ -46,6 +49,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     _orderService = OrderService(_authService);
     _cartService = CartService(_authService);
     _customerService = CustomerService(_authService);
+    _emailService = EmailService(_authService);
     _loadCustomerProfile();
   }
 
@@ -130,11 +134,25 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       // Clear cart after successful order
       await _cartService.clearCart();
 
+      // Send confirmation email (fire and forget - don't block UI)
+      final customerName =
+          '${_firstNameController.text} ${_lastNameController.text}';
+      final customerEmail = _authService.email ?? '';
+      if (customerEmail.isNotEmpty) {
+        _emailService
+            .sendOrderConfirmation(order, customerEmail, customerName)
+            .then((_) => debugPrint('📧 Orderbekräftelse skickad'))
+            .catchError((e) => debugPrint('📧 Kunde inte skicka email: $e'));
+      }
+
       if (mounted) {
         // Show success and navigate to confirmation
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
-            builder: (context) => OrderConfirmationScreen(order: order),
+            builder: (context) => OrderConfirmationScreen(
+              order: order,
+              emailSent: customerEmail.isNotEmpty,
+            ),
           ),
         );
       }
@@ -414,10 +432,42 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 }
 
 /// Order confirmation screen shown after successful order
-class OrderConfirmationScreen extends StatelessWidget {
+class OrderConfirmationScreen extends StatefulWidget {
   final Order order;
+  final bool emailSent;
 
-  const OrderConfirmationScreen({super.key, required this.order});
+  const OrderConfirmationScreen({
+    super.key,
+    required this.order,
+    this.emailSent = false,
+  });
+
+  @override
+  State<OrderConfirmationScreen> createState() => _OrderConfirmationScreenState();
+}
+
+class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
+  bool _isPrintingInvoice = false;
+
+  Future<void> _printInvoice() async {
+    setState(() => _isPrintingInvoice = true);
+    try {
+      await PdfService.printInvoice(widget.order);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Kunde inte skapa faktura: $e'),
+            backgroundColor: Colors.red[700],
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isPrintingInvoice = false);
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -453,27 +503,59 @@ class OrderConfirmationScreen extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                'Ordernummer: ${order.orderNumber}',
+                'Ordernummer: ${widget.order.orderNumber}',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       color: Colors.grey[600],
                     ),
               ),
+              if (widget.emailSent) ...[
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.email_outlined, size: 16, color: Colors.grey[600]),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Bekräftelse skickas till din e-post',
+                      style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                    ),
+                  ],
+                ),
+              ],
               const SizedBox(height: 32),
               Card(
                 child: Padding(
                   padding: const EdgeInsets.all(16),
                   child: Column(
                     children: [
-                      _buildInfoRow('Status', _statusText(order.status)),
+                      _buildInfoRow('Status', _statusText(widget.order.status)),
                       const Divider(),
-                      _buildInfoRow('Betalning', order.paymentMethod),
+                      _buildInfoRow('Betalning', widget.order.paymentMethod),
                       const Divider(),
-                      _buildInfoRow('Totalt', '${order.total.round()} kr'),
+                      _buildInfoRow('Totalt', '${widget.order.total.round()} kr'),
                     ],
                   ),
                 ),
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 24),
+
+              // Print invoice button
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: _isPrintingInvoice ? null : _printInvoice,
+                  icon: _isPrintingInvoice
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.print),
+                  label: Text(_isPrintingInvoice ? 'Skapar PDF...' : 'Skriv ut / Spara faktura'),
+                ),
+              ),
+              const SizedBox(height: 12),
+
               SizedBox(
                 width: double.infinity,
                 child: FilledButton(

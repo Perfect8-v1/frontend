@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'admin_product_list_screen.dart';
 import 'admin_product_images_screen.dart';
 import 'admin_upload_screen.dart';
+import 'admin_blog_list_screen.dart';
 
 /// Admin hub screen with navigation to admin features
 class AdminScreen extends StatelessWidget {
@@ -45,6 +46,16 @@ class AdminScreen extends StatelessWidget {
             onTap: () => Navigator.push(
               context,
               MaterialPageRoute(builder: (context) => const AdminUploadScreen()),
+            ),
+          ),
+          _buildAdminCard(
+            context,
+            icon: Icons.article,
+            title: 'Hantera Blogg',
+            subtitle: 'Skapa, redigera och publicera blogginlägg',
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const AdminBlogListScreen()),
             ),
           ),
         ],

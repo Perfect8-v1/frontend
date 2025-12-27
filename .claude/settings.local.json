@@ -10,7 +10,15 @@
       "Bash(git add:*)",
       "Bash(docker compose exec:*)",
       "Bash(docker compose:*)",
-      "Bash(dir /s /b \"C:\\\\_Perfect8\\\\backend\\\\shop-service\\\\JwtUtil.java\")"
+      "Bash(dir /s /b \"C:\\\\_Perfect8\\\\backend\\\\shop-service\\\\JwtUtil.java\")",
+      "Bash(ls -la \"c:\\\\_Perfect8\\\\backend\\\\shop-service\\\\src\\\\main\\\\java\\\\com\\\\perfect8\\\\shop\\\\util\"\" 2>/dev/null || echo \"Mappen finns inte \")",
+      "Bash(ls -la \"c:\\\\_Perfect8\\\\backend\\\\shop-service\\\\src\\\\main\\\\java\\\\com\\\\perfect8\\\\shop\\\\JwtUtil\"\" 2>/dev/null || echo \"Mappen finns inte \")",
+      "Bash(flutter doctor:*)",
+      "Bash(flutter build:*)",
+      "Bash(dir:*)",
+      "Bash(mvn clean package:*)",
+      "Bash(git push:*)",
+      "Bash(test:*)"
     ]
   }
 }
