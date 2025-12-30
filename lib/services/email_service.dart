@@ -21,7 +21,7 @@ class EmailService {
 
     try {
       final response = await http.post(
-        Uri.parse('${ApiConfig.emailUrl}/api/v1/email/order/confirmation'),
+        Uri.parse('${ApiConfig.emailUrl}/api/email/order/confirmation'),
         headers: _authService.authHeaders,
         body: jsonEncode(emailDto.toJson()),
       );
@@ -51,7 +51,7 @@ class EmailService {
 
     try {
       final response = await http.post(
-        Uri.parse('${ApiConfig.emailUrl}/api/v1/email/order/status'),
+        Uri.parse('${ApiConfig.emailUrl}/api/email/order/status'),
         headers: _authService.authHeaders,
         body: jsonEncode(emailDto.toJson()),
       );
@@ -78,7 +78,7 @@ class EmailService {
 
     try {
       final response = await http.post(
-        Uri.parse('${ApiConfig.emailUrl}/api/v1/email/order/shipped'),
+        Uri.parse('${ApiConfig.emailUrl}/api/email/order/shipped'),
         headers: _authService.authHeaders,
         body: jsonEncode(emailDto.toJson()),
       );
@@ -102,7 +102,7 @@ class EmailService {
   Future<void> sendEmail(EmailRequest request) async {
     try {
       final response = await http.post(
-        Uri.parse('${ApiConfig.emailUrl}/api/v1/email/send'),
+        Uri.parse('${ApiConfig.emailUrl}/api/email/send'),
         headers: _authService.authHeaders,
         body: jsonEncode(request.toJson()),
       );
@@ -126,7 +126,7 @@ class EmailService {
   Future<bool> healthCheck() async {
     try {
       final response = await http.get(
-        Uri.parse('${ApiConfig.emailUrl}/api/v1/email/test'),
+        Uri.parse('${ApiConfig.emailUrl}/api/email/test'),
       );
       return response.statusCode == 200;
     } catch (e) {

@@ -14,7 +14,7 @@ class CustomerService {
 
   /// Get current customer profile
   Future<Customer> getProfile() async {
-    final url = '${ApiConfig.shopUrl}/api/v1/customers/profile/';
+    final url = '${ApiConfig.shopUrl}/api/customers/profile/';
     debugPrint('👤 CustomerService.getProfile() - URL: $url');
 
     final response = await http.get(
@@ -35,7 +35,7 @@ class CustomerService {
 
   /// Get customer addresses
   Future<List<Address>> getAddresses() async {
-    final url = '${ApiConfig.shopUrl}/api/v1/customers/addresses/';
+    final url = '${ApiConfig.shopUrl}/api/customers/addresses/';
     debugPrint('📍 CustomerService.getAddresses() - URL: $url');
 
     final response = await http.get(
@@ -59,7 +59,7 @@ class CustomerService {
 
   /// Add new address
   Future<Address> addAddress(Map<String, dynamic> addressData) async {
-    final url = '${ApiConfig.shopUrl}/api/v1/customers/addresses/';
+    final url = '${ApiConfig.shopUrl}/api/customers/addresses/';
     debugPrint('📍 CustomerService.addAddress() - URL: $url');
 
     final response = await http.post(
@@ -84,7 +84,7 @@ class CustomerService {
 
   /// Delete address
   Future<void> deleteAddress(int addressId) async {
-    final url = '${ApiConfig.shopUrl}/api/v1/customers/addresses/$addressId/';
+    final url = '${ApiConfig.shopUrl}/api/customers/addresses/$addressId/';
     debugPrint('📍 CustomerService.deleteAddress() - URL: $url');
 
     final response = await http.delete(
@@ -105,7 +105,7 @@ class CustomerService {
     String? lastName,
     String? phone,
   }) async {
-    final url = '${ApiConfig.shopUrl}/api/v1/customers/profile/';
+    final url = '${ApiConfig.shopUrl}/api/customers/profile/';
     debugPrint('👤 CustomerService.updateProfile() - URL: $url');
 
     final body = <String, dynamic>{};

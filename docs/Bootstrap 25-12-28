@@ -1,0 +1,374 @@
+# Bootstrap Addendum 2025-12-28 - Spring Cloud Gateway Planning
+
+## Session Sammanfattning
+
+**Datum:** 2025-12-28  
+**Branch:** SCG (skapad från dev)  
+**Fokus:** Planering för Spring Cloud Gateway implementation  
+**Status:** Roadmap klar, redo att börja implementation
+
+---
+
+## Utfört Arbete
+
+### 1. Projektkontextualisering ✅
+
+Läste alla nyckeldokument för att förstå projektstatus:
+- Magnum Opus v1.4 - ADHD-anpassade principer
+- Missförstånd_Analys.md - Tidigare fallgropar
+- Bootstrap_Addendum_2025-12-17_v9.md - JWT-migration status
+- Perfect8_Feature_Map_v1.1.md - Feature-översikt
+- Perfect8_API_Guide_v1.2_final.md - API-struktur
+- struktur.txt - Projektstruktur
+- docker-compose.yml - Deployment-setup
+
+**Nuvarande projektstatus:**
+- Branch `dev`: JWT-migration klar, kompilerar ✅
+- Branch `Plain`: API-key auth (fungerande baseline)
+- Branch `AuthMan`: deprecated
+- Branch `SCG`: nyskapad för Spring Cloud Gateway
+
+### 2. Spring Cloud Gateway Roadmap Skapad ✅
+
+**Fil:** `Spring_Cloud_Gateway_Roadmap_v1.0.md`
+
+**Innehåll:**
+- Komplett arkitekturbeskrivning (nuvarande vs. planerad)
+- 4 faser över 2-3 arbetsdagar
+- 8 nya filer att skapa (api-gateway service)
+- 12 filer att ändra (ta bort JWT från services)
+- 20 ADHD-anpassade steg (EN åt gången)
+- Fullständig checklista
+- Deployment-instruktioner
+- Fallgropar att undvika
+
+**Viktiga arkitekturförändringar:**
+
+| Nuvarande (dev) | Planerad (SCG) |
+|-----------------|----------------|
+| nginx:80 → services | api-gateway:8080 → services |
+| JWT i varje service (5x) | JWT i gateway (1x) |
+| nginx-config utanför Spring | Allt i Spring Boot |
+| Svår debugging | Spring Boot logging |
+
+### 3. SCG Branch Skapad ✅
+
+**Kommandon körda:**
+```bash
+cd C:\_Perfect8\backend
+git checkout dev
+git pull origin dev
+git checkout -b SCG
+git push -u origin SCG
+```
+
+**Branch-status efter session:**
+```
+main     - produktionsklar (ej uppdaterad)
+Plain    - API-key auth (fungerande baseline)
+dev      - JWT auth (kompilerar, tester ej klara)
+SCG      - Spring Cloud Gateway (roadmap klar, kod ej påbörjad)
+AuthMan  - deprecated
+```
+
+### 4. Admin User Creation - Upptäckte Tabellstruktur 📋
+
+**Ursprunglig request:** Skapa admin user Jonathan med email `jonteyh@gmail.com` och lösenord `java100+`
+
+**Upptäckt:** Faktisk tabellstruktur skiljer sig från dokumentation:
+- Tabell heter `users` (INTE `admin_users`)
+- Kolumn heter `first_name` (INTE `username`)
+- Ingen `role` kolumn i INSERT (kan vara separat tabell)
+
+**Filer skapade:**
+1. `create_admin_jonathan_v2.sql` - SQL med placeholder BCrypt hash
+2. `CREATE_ADMIN_INSTRUKTIONER.md` - Steg-för-steg guide
+3. `generate_bcrypt_hash.sh` - Script för hash-generering
+
+**Status:** ⚠️ Ej slutfört - kräver korrekt BCrypt hash för `java100+`
+
+### 5. nginx-Problem Upptäckta 🚨 **VIKTIGT**
+
+**Problem identifierade:**
+
+#### Problem 1: HTTP → HTTPS Redirect
+```bash
+curl http://p8.rantila.com/api/v1/auth/login
+# → 301 Moved Permanently
+```
+✅ Lösning: Använd HTTPS
+
+#### Problem 2: nginx Strippar `/v1` från Path
+```bash
+curl https://p8.rantila.com/api/v1/auth/login
+# → Spring Boot får: /api/auth/login (utan /v1)
+```
+❌ nginx modifierar request path utan dokumentation
+
+#### Problem 3: Requests Försvinner
+```bash
+# Från servern:
+curl http://localhost:8081/api/v1/auth/login
+# → 401 Unauthorized (når Spring Boot)
+
+# Via nginx:
+curl https://p8.rantila.com/api/v1/auth/login  
+# → 400 Bad Request (path ändrad till /api/auth/login)
+```
+
+#### Problem 4: Svår Debugging
+- Spring Boot logs visar BARA healthchecks
+- Login-requests når ALDRIG admin-service via nginx
+- Ingen tydlig felhantering
+- Extern config utanför Spring-ekosystemet
+
+**Spring Boot logs visade:**
+```
+Securing POST /api/v1/auth/login
+JWT Filter: No Bearer token (OK för login!)
+Securing POST /error          ← Request redirectad till /error
+```
+= Controller finns inte eller fel konfigurerad
+
+### 6. Beslut: Stoppa nginx-Debugging ✅
+
+**Magnus beslut:** "Nej, nu måste jag stoppa felsökningen på nginx och endpoints. Vi gjorde en branch för SCG, men vi håller fortfarande på med loggar och odokumenterade endpoints."
+
+**Motivering:**
+- nginx-problem är EXAKT varför Spring Cloud Gateway behövs
+- Fortsatt debugging är bortkastade timmar
+- Bättre att bygga rätt lösning från början
+
+**Detta bevisade Spring Cloud Gateway-behovet:**
+- ❌ nginx strippar paths okontrollerat
+- ❌ Requests försvinner utan logging
+- ❌ Extern config svår att debugga
+- ✅ Spring Cloud Gateway löser allt detta
+
+---
+
+## Tekniska Detaljer
+
+### Spring Cloud Gateway Fördelar
+
+**Med SCG:**
+```java
+// application.yml - ALLT i Spring Boot
+spring:
+  cloud:
+    gateway:
+      routes:
+        - id: auth
+          uri: http://admin-service:8081
+          predicates:
+            - Path=/api/v1/auth/**
+```
+
+**Fördelar:**
+1. JWT valideras EN gång (inte 5 gånger)
+2. All routing i Java-kod
+3. Version control på all config
+4. Spring Boot logging för all trafik
+5. Easy debugging
+6. Rate limiting, circuit breaker, metrics built-in
+
+### Roadmap-Struktur
+
+**FAS 1: Gateway Setup** (Dag 1 förmiddag)
+- Skapa api-gateway Maven-modul
+- Konfigurera routes
+- Application.yml setup
+
+**FAS 2: Security Migration** (Dag 1 eftermiddag)
+- JWT filter i gateway
+- Security config
+- CORS setup
+
+**FAS 3: Service Cleanup** (Dag 2 förmiddag)
+- Ta bort JWT från alla 5 services
+- Förenkla SecurityConfig
+- Services litar på gateway
+
+**FAS 4: Testing & Deployment** (Dag 2 eftermiddag)
+- Docker integration
+- Lokal testing
+- Deploy till p8.rantila.com
+
+---
+
+## Problem Under Sessionen
+
+### 1. Claude Code Memory-Problem
+
+**Magnus feedback:** "Tyvärr så kom vi inte igång med Claude Code när det gällde bootstrap addendum och nästa arbetsdag. Det var som jag hade en lång chat med Claude Code, men Claude Code var snabb att glömma Magnum Opus osv."
+
+**Lösning:** Fortsätt med Bootstrap Addendum (BA) och Nästa Arbetsdag (NA) i denna chat.
+
+### 2. Docker Logs från Windows
+
+**Problem:** Magnus försökte köra `docker compose logs` från Windows, men Docker finns på servern.
+
+**Lösning:** SSH till server först:
+```bash
+ssh user@p8.rantila.com
+cd ~/backend
+docker compose logs --tail=100 admin-service
+```
+
+### 3. Healthcheck Flooding Logs
+
+**Problem:** `/actuator/health` körs var 5:e sekund och floodar loggarna.
+
+**Lösning:** Filtrera bort healthchecks:
+```bash
+docker compose logs -f admin-service | grep -v "actuator/health"
+```
+
+### 4. BCrypt Hash Placeholder
+
+**Problem:** SQL-scriptet innehöll placeholder-hash, inte riktig hash för `java100+`.
+
+**Lösning:** Använd https://bcrypt-generator.com/
+- Input: `java100+`
+- Cost: `10`
+- Kopiera hash och uppdatera SQL
+
+---
+
+## Filer Skapade
+
+### Roadmap & Dokumentation
+1. `Spring_Cloud_Gateway_Roadmap_v1.0.md` - Komplett implementation-plan
+2. `Bootstrap_Addendum_2025-12-28_SCG_Planning.md` - Detta dokument
+3. `Nasta_Arbetsdag_2025-12-29.md` - Fortsättning imorgon
+
+### Admin User Scripts
+4. `create_admin_jonathan_v2.sql` - SQL för att skapa användare
+5. `CREATE_ADMIN_INSTRUKTIONER.md` - Steg-för-steg guide
+6. `generate_bcrypt_hash.sh` - Bash-script för hash-generering
+
+**Total:** 6 filer
+
+---
+
+## Nästa Session - Prioritet
+
+### Omedelbar Uppgift: Börja FAS 1
+
+**Steg 1:** Skapa `api-gateway/pom.xml`
+- Spring Cloud Gateway dependencies
+- JWT dependencies
+- Actuator för healthchecks
+
+**Steg 2:** Skapa `GatewayApplication.java`
+- Main class
+- @SpringBootApplication annotation
+
+**Steg 3:** Skapa `application.yml`
+- Port: 8080
+- Routes till alla 5 services
+- JWT secret config
+
+**Följ roadmapen:** Ett steg i taget, kompilera efter varje fil
+
+---
+
+## Lärdomar & Insikter
+
+### 1. nginx Är Problemet (BEKRÄFTAT)
+
+**Bevis:**
+- Strippar paths utan dokumentation
+- Requests försvinner
+- Svår debugging
+- Extern config
+
+**Slutsats:** Spring Cloud Gateway är rätt lösning!
+
+### 2. Dokumentation Är Kritisk
+
+Magnus insisterade på roadmap INNAN implementation = smart!
+- Ger översikt
+- ADHD-anpassat (ett steg i taget)
+- Tydliga milstolpar
+- Fallgropar dokumenterade
+
+### 3. Stoppa Vid Rätt Tidpunkt
+
+Magnus stoppade nginx-debugging = rätt beslut!
+- Kunde fortsatt i timmar utan resultat
+- Bättre att bygga rätt från början
+- Spring Cloud Gateway löser problemet fundamentalt
+
+### 4. Claude Code vs Chat
+
+**Claude Code:** Glömmer kontext (Magnum Opus, etc.)  
+**Denna Chat:** Bättre för Bootstrap Addendum och dokumentation
+
+**Fortsätt med:** BA/NA i chat, kod i Claude Code (med uppfrischning)
+
+---
+
+## Checklista Innan Nästa Session
+
+- [x] Roadmap skapad
+- [x] SCG branch skapad
+- [x] nginx-problem dokumenterade
+- [x] Bootstrap Addendum skrivet
+- [x] Nästa Arbetsdag skrivet
+- [ ] Admin user Jonathan skapad (⚠️ kräver korrekt hash)
+- [ ] api-gateway implementation påbörjad
+
+---
+
+## Kom Ihåg Till Nästa Gång
+
+**Vid start av ny session:**
+1. Läs `Spring_Cloud_Gateway_Roadmap_v1.0.md`
+2. Läs `Nasta_Arbetsdag_2025-12-29.md`
+3. Börja med FAS 1, Steg 1
+4. EN fil åt gången
+5. Kompilera efter varje fil
+
+**ADHD-principer:**
+- Max 2 alternativ per beslut
+- Korta, konkreta instruktioner
+- Kompletta filer (inga "ändra rad 47")
+- En sak i taget
+
+**Deployment:**
+- JAR byggs PÅ SERVERN (aldrig lokalt)
+- git push → git pull → docker compose build
+- Aldrig scp för kodfiler
+
+---
+
+## Sammanfattning
+
+**Vad gick bra:**
+- ✅ Komplett roadmap skapad
+- ✅ nginx-problem identifierade och dokumenterade
+- ✅ Beslut att stoppa debugging vid rätt tidpunkt
+- ✅ SCG branch skapad och klar för implementation
+- ✅ Tydlig plan för nästa 2-3 dagar
+
+**Vad behöver göras:**
+- [ ] Implementera api-gateway (följ roadmap)
+- [ ] Fixa admin user Jonathan (generera korrekt hash)
+- [ ] Testa lokal deployment
+- [ ] Deploy till p8.rantila.com
+
+**Nästa fokus:**
+Spring Cloud Gateway FAS 1 - Gateway Setup (8 filer att skapa)
+
+---
+
+**Version:** 1.0  
+**Skapad:** 2025-12-28  
+**Författare:** Magnus & Claude  
+**Branch:** SCG  
+**Nästa Steg:** Implementera api-gateway/pom.xml
+
+---
+
+*"Detta var sessionen då vi slutade debugga nginx och beslöt att bygga rätt från början."*

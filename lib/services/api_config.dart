@@ -1,8 +1,8 @@
 // lib/services/api_config.dart
 
 class ApiConfig {
-  // Production - all services via nginx reverse proxy
-  static const String baseUrl = 'https://p8.rantila.com';
+  // Production - all services via nginx Gateway on port 8080
+  static const String baseUrl = 'http://p8.rantila.com:8080';
 
   // Development (uncomment for local testing with direct ports)
   // static const String baseUrl = 'http://127.0.0.1';
@@ -10,14 +10,14 @@ class ApiConfig {
   // static String get shopUrl => '$baseUrl:8085';
   // static String get imageUrl => '$baseUrl:8084';
 
-  // Production URLs - nginx proxies /api/v1/* to services
-  // nginx strips /v1/ before forwarding to backend
-  static String get adminUrl => baseUrl;  // /api/v1/auth/* -> admin:8081/api/auth/*
-  static String get blogUrl => baseUrl;   // /api/v1/blog/* -> blog:8082/api/blog/*
-  static String get postsUrl => baseUrl;  // /api/v1/posts/* -> blog:8082/api/posts/*
-  static String get emailUrl => baseUrl;  // /api/v1/email/* -> email:8083/api/email/*
-  static String get imageUrl => baseUrl;  // /api/v1/images/* -> image:8084/api/images/*
-  static String get shopUrl => baseUrl;   // /api/v1/products/* -> shop:8085/api/products/*
+  // All services use Gateway - no more /v1/ in paths
+  static String get gatewayUrl => baseUrl;
+  static String get adminUrl => gatewayUrl;  // /api/auth/* -> admin:8081
+  static String get blogUrl => gatewayUrl;   // /api/blog/* -> blog:8082
+  static String get postsUrl => gatewayUrl;  // /api/posts/* -> blog:8082
+  static String get emailUrl => gatewayUrl;  // /api/email/* -> email:8083
+  static String get imageUrl => gatewayUrl;  // /api/images/* -> image:8084
+  static String get shopUrl => gatewayUrl;   // /api/products/* -> shop:8085
 
   // Timeouts
   static const Duration connectTimeout = Duration(seconds: 10);

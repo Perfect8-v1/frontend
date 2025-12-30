@@ -39,7 +39,7 @@ class AuthService {
   /// Fetch salt for login (existing user)
   Future<String> _getSaltForLogin(String email) async {
     final response = await http.get(
-      Uri.parse('${ApiConfig.adminUrl}/api/v1/auth/salt/?email=$email'),
+      Uri.parse('${ApiConfig.adminUrl}/api/auth/salt/?email=$email'),
       headers: {'Content-Type': 'application/json'},
     );
 
@@ -59,7 +59,7 @@ class AuthService {
   /// Fetch salt for registration (new user)
   Future<String> _getSaltForRegistration(String email) async {
     final response = await http.get(
-      Uri.parse('${ApiConfig.adminUrl}/api/v1/auth/salt/?email=$email&forRegistration=true'),
+      Uri.parse('${ApiConfig.adminUrl}/api/auth/salt/?email=$email&forRegistration=true'),
       headers: {'Content-Type': 'application/json'},
     );
 
@@ -95,7 +95,7 @@ class AuthService {
 
     // Step 3: Send hash to backend
     final response = await http.post(
-      Uri.parse('${ApiConfig.adminUrl}/api/v1/auth/login/'),
+      Uri.parse('${ApiConfig.adminUrl}/api/auth/login/'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
         'email': email,
@@ -122,7 +122,7 @@ class AuthService {
 
     // Step 3: Send hash to backend
     final response = await http.post(
-      Uri.parse('${ApiConfig.adminUrl}/api/v1/auth/login/'),
+      Uri.parse('${ApiConfig.adminUrl}/api/auth/login/'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
         'email': email,
@@ -149,7 +149,7 @@ class AuthService {
 
     // Step 3: Send hash + salt to backend
     final response = await http.post(
-      Uri.parse('${ApiConfig.adminUrl}/api/v1/auth/register/'),
+      Uri.parse('${ApiConfig.adminUrl}/api/auth/register/'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
         'email': request.email,

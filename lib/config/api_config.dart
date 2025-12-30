@@ -1,31 +1,50 @@
 /// API Configuration for Perfect8 Backend
-/// 
-/// Change baseUrl to switch between local and production server
+///
+/// Updated to use API Gateway instead of direct service connections
 class ApiConfig {
   // 🏠 LOCAL (utveckling på din dator)
-  // static const String baseUrl = 'http://localhost';
-  
+  // static const String baseUrl = 'http://localhost:8080';
+
   // 🌐 SERVER (production på p8.rantila.com)
-  static const String baseUrl = 'http://p8.rantila.com';
-  
-  // Service ports
-  static const int adminPort = 8081;
-  static const int blogPort = 8082;
-  static const int emailPort = 8083;
-  static const int imagePort = 8084;
-  static const int shopPort = 8085;
-  
-  // Full URLs för varje service
-  static String get adminUrl => '$baseUrl:$adminPort';
-  static String get blogUrl => '$baseUrl:$blogPort';
-  static String get emailUrl => '$baseUrl:$emailPort';
-  static String get imageUrl => '$baseUrl:$imagePort';
-  static String get shopUrl => '$baseUrl:$shopPort';
-  
-  // Health check endpoints
-  static String get adminHealth => '$adminUrl/actuator/health';
-  static String get blogHealth => '$blogUrl/actuator/health';
-  static String get emailHealth => '$emailUrl/actuator/health';
-  static String get imageHealth => '$imageUrl/actuator/health';
-  static String get shopHealth => '$shopUrl/actuator/health';
+  static const String baseUrl = 'http://p8.rantila.com:8080';
+
+  // Gateway port (single entry point)
+  static const int gatewayPort = 8080;
+
+  // ==========================================
+  // API Gateway URLs (all traffic goes through Gateway)
+  // ==========================================
+
+  /// Gateway base URL (all requests go through this)
+  static String get gatewayUrl => baseUrl;
+
+  /// All services use Gateway - no direct service URLs needed
+  static String get adminUrl => gatewayUrl;
+  static String get blogUrl => gatewayUrl;
+  static String get emailUrl => gatewayUrl;
+  static String get imageUrl => gatewayUrl;
+  static String get shopUrl => gatewayUrl;
+
+  // ==========================================
+  // Health check endpoints (via Gateway)
+  // ==========================================
+
+  /// Note: Actuator endpoints still use service-specific paths
+  /// Gateway routes /api/admin/actuator/** to admin-service
+  static String get adminHealth => '$gatewayUrl/api/admin/actuator/health';
+  static String get blogHealth => '$gatewayUrl/api/posts/actuator/health';
+  static String get emailHealth => '$gatewayUrl/api/email/actuator/health';
+  static String get imageHealth => '$gatewayUrl/api/images/actuator/health';
+  static String get shopHealth => '$gatewayUrl/api/shop/actuator/health';
+
+  // ==========================================
+  // Notes for developers
+  // ==========================================
+
+  /// IMPORTANT:
+  /// - All API calls now go through Gateway (port 8080)
+  /// - No /v1 in paths! Use /api/products NOT /api/v1/products
+  /// - Gateway handles routing to appropriate services
+  /// - Example: GET http://p8.rantila.com:8080/api/products
+  ///   → Gateway routes to shop-service:8085/api/products
 }

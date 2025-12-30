@@ -15,7 +15,7 @@ class CartService {
 
   /// Get current cart
   Future<Cart> getCart() async {
-    final url = '${ApiConfig.shopUrl}/api/v1/cart/';
+    final url = '${ApiConfig.shopUrl}/api/cart/';
     final headers = _authService.authHeaders;
     debugPrint('🛒 CartService.getCart() - URL: $url');
     debugPrint('🛒 CartService.getCart() - Headers: $headers');
@@ -39,7 +39,7 @@ class CartService {
 
   /// Add product to cart
   Future<Cart> addToCart(int productId, {int quantity = 1}) async {
-    final url = '${ApiConfig.shopUrl}/api/v1/cart/add/';
+    final url = '${ApiConfig.shopUrl}/api/cart/add/';
     final body = jsonEncode({
       'productId': productId,
       'quantity': quantity,
@@ -68,7 +68,7 @@ class CartService {
   /// Update item quantity
   Future<Cart> updateQuantity(int productId, int quantity) async {
     final response = await http.put(
-      Uri.parse('${ApiConfig.shopUrl}/api/v1/cart/update/'),
+      Uri.parse('${ApiConfig.shopUrl}/api/cart/update/'),
       headers: _authService.authHeaders,
       body: jsonEncode({
         'productId': productId,
@@ -88,7 +88,7 @@ class CartService {
   /// Remove item from cart
   Future<Cart> removeItem(int productId) async {
     final response = await http.delete(
-      Uri.parse('${ApiConfig.shopUrl}/api/v1/cart/remove/$productId/'),
+      Uri.parse('${ApiConfig.shopUrl}/api/cart/remove/$productId/'),
       headers: _authService.authHeaders,
     );
 
@@ -104,7 +104,7 @@ class CartService {
   /// Clear entire cart
   Future<void> clearCart() async {
     final response = await http.delete(
-      Uri.parse('${ApiConfig.shopUrl}/api/v1/cart/clear/'),
+      Uri.parse('${ApiConfig.shopUrl}/api/cart/clear/'),
       headers: _authService.authHeaders,
     );
 
@@ -116,7 +116,7 @@ class CartService {
   /// Get cart item count
   Future<int> getCartItemCount() async {
     final response = await http.get(
-      Uri.parse('${ApiConfig.shopUrl}/api/v1/cart/count/'),
+      Uri.parse('${ApiConfig.shopUrl}/api/cart/count/'),
       headers: _authService.authHeaders,
     );
 

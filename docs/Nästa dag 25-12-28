@@ -1,0 +1,302 @@
+# Nästa Arbetsdag - 2025-12-29
+
+## Kontext
+
+**Branch:** SCG  
+**Status:** Roadmap klar, redo att börja implementera Spring Cloud Gateway  
+**Föregående session:** Planering, nginx-problem dokumenterade  
+**Fokus idag:** FAS 1 - Gateway Setup (börja implementera api-gateway)
+
+---
+
+## 📚 Läs Först
+
+**Öppna dessa filer INNAN du börjar:**
+
+1. `Spring_Cloud_Gateway_Roadmap_v1.0.md` - Komplett plan
+2. `Bootstrap_Addendum_2025-12-28_SCG_Planning.md` - Vad vi gjorde igår
+3. Detta dokument - Vad du ska göra idag
+
+---
+
+## ⚡ Snabbstart - Första 5 Minuter
+
+**På Windows:**
+
+```bash
+cd C:\_Perfect8\backend
+git checkout SCG
+git status
+# Verifiera att du är på SCG branch
+```
+
+---
+
+## 🎯 IDAG: FAS 1 - Gateway Setup
+
+**Mål:** Skapa api-gateway service med routing till alla 5 services
+
+**Filer att skapa (8 st):**
+
+```
+api-gateway/
+├── pom.xml                                  ← Steg 1
+├── Dockerfile                               ← Steg 5
+└── src/main/
+    ├── java/com/perfect8/gateway/
+    │   ├── GatewayApplication.java         ← Steg 2
+    │   ├── config/
+    │   │   ├── GatewayConfig.java          ← Steg 4
+    │   │   └── CorsConfig.java             ← Steg 7
+    │   └── filter/
+    │       └── JwtAuthenticationFilter.java ← Steg 6
+    └── resources/
+        └── application.yml                  ← Steg 3
+```
+
+**Följ roadmapen:** Ett steg i taget!
+
+---
+
+## 📝 Steg-för-Steg (ADHD-Anpassat)
+
+### Steg 1: Skapa api-gateway/pom.xml ⭐ BÖRJA HÄR
+
+**Be Claude om:**
+> "Skapa api-gateway/pom.xml enligt Spring Cloud Gateway Roadmap FAS 1, steg 1"
+
+**Efter fil skapad:**
+```bash
+# Lägg till module i root pom.xml
+# (Claude gör detta automatiskt)
+
+# Kompilera
+mvn clean compile -pl :api-gateway -am -q
+
+# Om lyckat → Gå till Steg 2
+# Om fel → Fixa innan nästa steg
+```
+
+### Steg 2: Skapa GatewayApplication.java
+
+**Be Claude om:**
+> "Skapa GatewayApplication.java enligt roadmap"
+
+**Efter fil skapad:**
+```bash
+mvn clean compile -pl :api-gateway -q
+# Fortsätt BARA om det kompilerar!
+```
+
+### Steg 3: Skapa application.yml
+
+**Be Claude om:**
+> "Skapa application.yml med routes till alla 5 services"
+
+**Viktiga routes:**
+- `/api/v1/auth/**` → admin-service:8081
+- `/api/v1/posts/**` → blog-service:8082
+- `/api/v1/images/**` → image-service:8084
+- `/api/v1/products/**` → shop-service:8085
+- osv.
+
+### Steg 4: Skapa GatewayConfig.java
+
+**Be Claude om:**
+> "Skapa GatewayConfig.java med route beans"
+
+### Steg 5: Skapa Dockerfile
+
+**Be Claude om:**
+> "Skapa Dockerfile för api-gateway"
+
+### Steg 6: Skapa JwtAuthenticationFilter.java
+
+**Be Claude om:**
+> "Skapa JwtAuthenticationFilter för gateway (validera JWT centralt)"
+
+### Steg 7: Skapa CorsConfig.java
+
+**Be Claude om:**
+> "Skapa CorsConfig för gateway"
+
+### Steg 8: Uppdatera Parent POM
+
+**Be Claude om:**
+> "Lägg till api-gateway som module i root pom.xml"
+
+---
+
+## ✅ Checklista Efter FAS 1
+
+- [ ] `api-gateway/pom.xml` skapad och kompilerar
+- [ ] `GatewayApplication.java` skapad
+- [ ] `application.yml` med alla routes
+- [ ] `GatewayConfig.java` skapad
+- [ ] `Dockerfile` skapad
+- [ ] `JwtAuthenticationFilter.java` skapad
+- [ ] `CorsConfig.java` skapad
+- [ ] Root `pom.xml` uppdaterad med api-gateway module
+- [ ] Hela projektet kompilerar: `mvn clean compile -q`
+
+---
+
+## 🧪 Test Efter FAS 1
+
+**Lokal test (utan Docker):**
+
+```bash
+# Starta api-gateway lokalt
+cd api-gateway
+mvn spring-boot:run
+
+# I annan terminal:
+curl http://localhost:8080/actuator/health
+# Förväntat: {"status":"UP"}
+```
+
+**Om det funkar → FAS 1 klar! 🎉**
+
+---
+
+## 🚨 Om Problem Uppstår
+
+### Problem: Kompileringsfel
+
+```bash
+# Kör clean först
+mvn clean compile -q
+
+# Om 100+ fel → troligen cache
+mvn clean compile -pl :api-gateway -am -q
+```
+
+### Problem: Dependencies saknas
+
+**Kolla att pom.xml har:**
+- spring-cloud-starter-gateway
+- spring-boot-starter-security
+- jjwt-api (0.12.3)
+- spring-boot-starter-actuator
+
+### Problem: Port 8080 upptagen
+
+**Ändra i application.yml:**
+```yaml
+server:
+  port: 8090  # Eller annan ledig port
+```
+
+---
+
+## 📊 Framsteg-Tracking
+
+**FAS 1:** Gateway Setup  
+- [ ] Steg 1: pom.xml
+- [ ] Steg 2: GatewayApplication.java
+- [ ] Steg 3: application.yml
+- [ ] Steg 4: GatewayConfig.java
+- [ ] Steg 5: Dockerfile
+- [ ] Steg 6: JwtAuthenticationFilter.java
+- [ ] Steg 7: CorsConfig.java
+- [ ] Steg 8: Root pom update
+
+**FAS 2:** Security Migration (Dag 1 eftermiddag)  
+**FAS 3:** Service Cleanup (Dag 2 förmiddag)  
+**FAS 4:** Testing & Deployment (Dag 2 eftermiddag)
+
+---
+
+## 💡 Kom Ihåg
+
+**ADHD-principer:**
+- ✅ EN fil åt gången
+- ✅ Kompilera efter varje fil
+- ✅ Max 2 alternativ per beslut
+- ✅ Kompletta filer (inga "ändra rad 47")
+
+**Magnum Opus-principer:**
+- ✅ Entity-first (men nu gäller config-first för gateway)
+- ✅ Samma namnkonventioner överallt
+- ✅ Inga alias-metoder
+- ✅ Minimala dependencies
+
+**Deployment-principer:**
+- ✅ JAR byggs på servern (inte lokalt)
+- ✅ git push → git pull → docker compose build
+- ✅ Aldrig scp för kodfiler
+
+---
+
+## 🎯 Mål För Dagen
+
+**Minimum:**
+- [ ] FAS 1 klar (alla 8 filer)
+- [ ] Projekt kompilerar
+
+**Optimalt:**
+- [ ] FAS 1 klar
+- [ ] FAS 2 påbörjad (JWT filter och SecurityConfig)
+- [ ] Lokal testning fungerande
+
+**Stretch goal:**
+- [ ] FAS 2 klar
+- [ ] FAS 3 påbörjad (börja ta bort JWT från services)
+
+---
+
+## 📞 Vid Sessionslut
+
+**Be Claude om:**
+1. Bootstrap Addendum för dagens session
+2. Uppdaterad Nästa Arbetsdag för imorgon
+3. Sammanfattning av vad som återstår
+
+---
+
+## 🔗 Viktiga Filer
+
+**Läs vid behov:**
+- `Spring_Cloud_Gateway_Roadmap_v1.0.md` - Komplett plan
+- `Magnum_Opus_v1.4.md` - Grundprinciper
+- `Missforstand_Analys.md` - Undvik tidigare misstag
+- `Perfect8_API_Guide_v1.2_final.md` - API-struktur
+
+---
+
+## Snabbkommandon
+
+```bash
+# Status
+git status
+git branch
+
+# Kompilera
+mvn clean compile -q
+mvn clean compile -pl :api-gateway -am -q
+
+# Kör lokalt
+cd api-gateway
+mvn spring-boot:run
+
+# Test
+curl http://localhost:8080/actuator/health
+
+# Commit (när FAS klar)
+git add api-gateway/
+git commit -m "FAS 1: Gateway setup complete"
+git push origin SCG
+```
+
+---
+
+**Lycka till Magnus! 🚀**
+
+**Börja med:** Be Claude skapa `api-gateway/pom.xml`
+
+---
+
+*Version: 1.0*  
+*Skapad: 2025-12-28*  
+*För: 2025-12-29*  
+*Branch: SCG*

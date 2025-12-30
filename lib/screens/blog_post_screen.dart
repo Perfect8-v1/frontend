@@ -148,7 +148,7 @@ class _BlogPostScreenState extends State<BlogPostScreen> {
                   return ClipRRect(
                     borderRadius: BorderRadius.circular(8),
                     child: Image.network(
-                      '${ApiConfig.imageUrl}/api/v1/images/${image.imageId}/content/',
+                      '${ApiConfig.imageUrl}/api/images/${image.imageId}/content/',
                       height: 200,
                       fit: BoxFit.cover,
                       errorBuilder: (_, __, ___) => Container(

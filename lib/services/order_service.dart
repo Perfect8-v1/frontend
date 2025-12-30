@@ -46,7 +46,7 @@ class OrderService {
       'source': 'MOBILE',
     };
 
-    final url = '${ApiConfig.shopUrl}/api/v1/orders/';
+    final url = '${ApiConfig.shopUrl}/api/orders/';
     final body = jsonEncode(requestBody);
     debugPrint('📦 OrderService.createOrder() - URL: $url');
     debugPrint('📦 OrderService.createOrder() - Body: $body');
@@ -117,7 +117,7 @@ class OrderService {
     }
 
     final response = await http.get(
-      Uri.parse('${ApiConfig.shopUrl}/api/v1/orders/customer/$userId/?page=$page&size=$size'),
+      Uri.parse('${ApiConfig.shopUrl}/api/orders/customer/$userId/?page=$page&size=$size'),
       headers: _authService.authHeaders,
     );
 
@@ -139,7 +139,7 @@ class OrderService {
   /// Get order by ID
   Future<Order> getOrder(int orderId) async {
     final response = await http.get(
-      Uri.parse('${ApiConfig.shopUrl}/api/v1/orders/$orderId/'),
+      Uri.parse('${ApiConfig.shopUrl}/api/orders/$orderId/'),
       headers: _authService.authHeaders,
     );
 
@@ -154,7 +154,7 @@ class OrderService {
 
   /// Cancel order
   Future<Order> cancelOrder(int orderId, {String? reason}) async {
-    final uri = Uri.parse('${ApiConfig.shopUrl}/api/v1/orders/$orderId/cancel/')
+    final uri = Uri.parse('${ApiConfig.shopUrl}/api/orders/$orderId/cancel/')
         .replace(queryParameters: reason != null ? {'reason': reason} : null);
 
     final response = await http.post(

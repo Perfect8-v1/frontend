@@ -16,7 +16,7 @@ class BlogService {
   /// Get published blog posts (public)
   Future<List<BlogPost>> getPublishedPosts({int page = 0, int size = 10}) async {
     final response = await http.get(
-      Uri.parse('${ApiConfig.postsUrl}/api/v1/posts/?page=$page&size=$size'),
+      Uri.parse('${ApiConfig.postsUrl}/api/posts/?page=$page&size=$size'),
       headers: {'Content-Type': 'application/json'},
     );
 
@@ -40,7 +40,7 @@ class BlogService {
   /// Get single blog post by slug (public)
   Future<BlogPost> getPostBySlug(String slug) async {
     final response = await http.get(
-      Uri.parse('${ApiConfig.postsUrl}/api/v1/posts/$slug/'),
+      Uri.parse('${ApiConfig.postsUrl}/api/posts/$slug/'),
       headers: {'Content-Type': 'application/json'},
     );
 
@@ -58,7 +58,7 @@ class BlogService {
   /// Create new blog post (admin only)
   Future<BlogPost> createPost(BlogPostRequest request) async {
     final response = await http.post(
-      Uri.parse('${ApiConfig.postsUrl}/api/v1/posts/'),
+      Uri.parse('${ApiConfig.postsUrl}/api/posts/'),
       headers: _authService.authHeaders,
       body: jsonEncode(request.toJson()),
     );
@@ -77,7 +77,7 @@ class BlogService {
   /// Update existing blog post (admin only)
   Future<BlogPost> updatePost(int postId, BlogPostRequest request) async {
     final response = await http.put(
-      Uri.parse('${ApiConfig.postsUrl}/api/v1/posts/$postId/'),
+      Uri.parse('${ApiConfig.postsUrl}/api/posts/$postId/'),
       headers: _authService.authHeaders,
       body: jsonEncode(request.toJson()),
     );
@@ -96,7 +96,7 @@ class BlogService {
   /// Delete blog post (admin only)
   Future<void> deletePost(int postId) async {
     final response = await http.delete(
-      Uri.parse('${ApiConfig.postsUrl}/api/v1/posts/$postId/'),
+      Uri.parse('${ApiConfig.postsUrl}/api/posts/$postId/'),
       headers: _authService.authHeaders,
     );
 
@@ -110,7 +110,7 @@ class BlogService {
   /// Get all posts including drafts (admin only)
   Future<List<BlogPost>> getAllPosts({int page = 0, int size = 20}) async {
     final response = await http.get(
-      Uri.parse('${ApiConfig.postsUrl}/api/v1/posts/admin/?page=$page&size=$size'),
+      Uri.parse('${ApiConfig.postsUrl}/api/posts/admin/?page=$page&size=$size'),
       headers: _authService.authHeaders,
     );
 
