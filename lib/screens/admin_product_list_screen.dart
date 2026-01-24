@@ -1,9 +1,9 @@
 // lib/screens/admin_product_list_screen.dart
 import 'package:flutter/material.dart';
 import '../models/product_models.dart';
-import '../services/auth_service.dart';
 import '../services/product_service.dart';
 import '../services/api_exception.dart';
+import '../services/auth_service.dart';
 import 'admin_product_edit_screen.dart';
 
 /// Admin screen for managing products with category tabs and sorting
@@ -92,7 +92,8 @@ class _AdminProductListScreenState extends State<AdminProductListScreen>
     if (!_tabController!.indexIsChanging) {
       final index = _tabController!.index;
       setState(() {
-        _selectedCategoryId = index == 0 ? null : _categories[index - 1].categoryId;
+        _selectedCategoryId =
+            index == 0 ? null : _categories[index - 1].categoryId;
       });
       _loadProducts();
     }
@@ -322,7 +323,8 @@ class _AdminProductListScreenState extends State<AdminProductListScreen>
                     },
                     errorBuilder: (context, error, stackTrace) {
                       // Debug: Print error to console
-                      debugPrint('Image load error: ${product.thumbnailImageUrl}');
+                      debugPrint(
+                          'Image load error: ${product.thumbnailImageUrl}');
                       debugPrint('Error: $error');
                       return _buildPlaceholder();
                     },
@@ -414,7 +416,8 @@ class _AdminProductListScreenState extends State<AdminProductListScreen>
       ),
       child: Text(
         text,
-        style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.w500),
+        style:
+            TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.w500),
       ),
     );
   }

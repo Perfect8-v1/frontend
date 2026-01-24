@@ -1,8 +1,8 @@
 // lib/screens/register_screen.dart
 import 'package:flutter/material.dart';
 import '../models/auth_models.dart';
-import '../services/auth_service.dart';
 import '../services/api_exception.dart';
+import '../services/auth_service.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -112,7 +112,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                         child: Row(
                           children: [
-                            Icon(Icons.check_circle_outline, color: Colors.green[700]),
+                            Icon(Icons.check_circle_outline,
+                                color: Colors.green[700]),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
@@ -260,7 +261,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ),
                           onPressed: () {
                             setState(() {
-                              _obscureConfirmPassword = !_obscureConfirmPassword;
+                              _obscureConfirmPassword =
+                                  !_obscureConfirmPassword;
                             });
                           },
                         ),

@@ -1,9 +1,9 @@
 // lib/screens/product_list_screen.dart
 import 'package:flutter/material.dart';
 import '../models/product_models.dart';
-import '../services/auth_service.dart';
 import '../services/product_service.dart';
 import '../services/api_exception.dart';
+import '../services/auth_service.dart';
 import 'product_detail_screen.dart';
 import 'cart_screen.dart';
 
@@ -21,7 +21,10 @@ class _ProductListScreenState extends State<ProductListScreen> {
   late final ProductService _productService;
 
   List<Product> _products = [];
+  List<Category> _categories = [];
+  Category? _selectedCategory;
   bool _isLoading = true;
+  bool _isCategoriesLoading = true;
   String? _errorMessage;
   int _currentPage = 0;
   bool _hasMore = true;
@@ -30,7 +33,32 @@ class _ProductListScreenState extends State<ProductListScreen> {
   void initState() {
     super.initState();
     _productService = ProductService(_authService);
+    _loadCategories();
     _loadProducts();
+  }
+
+  Future<void> _loadCategories() async {
+    setState(() {
+      _isCategoriesLoading = true;
+    });
+
+    try {
+      final categories = await _productService.getCategories();
+      setState(() {
+        _categories = categories;
+        _isCategoriesLoading = false;
+      });
+    } on ApiException catch (e) {
+      debugPrint('Kunde inte hämta kategorier: ${e.message}');
+      setState(() {
+        _isCategoriesLoading = false;
+      });
+    } catch (e) {
+      debugPrint('Kunde inte hämta kategorier: $e');
+      setState(() {
+        _isCategoriesLoading = false;
+      });
+    }
   }
 
   Future<void> _loadProducts({bool refresh = false}) async {
@@ -53,6 +81,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
       final response = await _productService.getProducts(
         page: _currentPage,
         size: 20,
+        categoryId: _selectedCategory?.categoryId,
       );
 
       setState(() {
@@ -72,6 +101,15 @@ class _ProductListScreenState extends State<ProductListScreen> {
         _isLoading = false;
       });
     }
+  }
+
+  void _onCategorySelected(Category? category) {
+    if (_selectedCategory?.categoryId == category?.categoryId) return;
+
+    setState(() {
+      _selectedCategory = category;
+    });
+    _loadProducts(refresh: true);
   }
 
   @override
@@ -95,7 +133,20 @@ class _ProductListScreenState extends State<ProductListScreen> {
           ),
         ],
       ),
-      body: _buildBody(),
+      body: Column(
+        children: [
+          // Category selector
+          _CategorySelector(
+            categories: _categories,
+            selectedCategory: _selectedCategory,
+            isLoading: _isCategoriesLoading,
+            onCategorySelected: _onCategorySelected,
+          ),
+
+          // Product grid
+          Expanded(child: _buildBody()),
+        ],
+      ),
     );
   }
 
@@ -123,13 +174,17 @@ class _ProductListScreenState extends State<ProductListScreen> {
     }
 
     if (_products.isEmpty) {
-      return const Center(
+      return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.inventory_2_outlined, size: 64, color: Colors.grey),
-            SizedBox(height: 16),
-            Text('Inga produkter hittades'),
+            const Icon(Icons.inventory_2_outlined, size: 64, color: Colors.grey),
+            const SizedBox(height: 16),
+            Text(
+              _selectedCategory != null
+                  ? 'Inga produkter i ${_selectedCategory!.name}'
+                  : 'Inga produkter hittades',
+            ),
           ],
         ),
       );
@@ -161,6 +216,96 @@ class _ProductListScreenState extends State<ProductListScreen> {
   }
 }
 
+// ============================================================
+// Category Selector Widget
+// ============================================================
+class _CategorySelector extends StatelessWidget {
+  final List<Category> categories;
+  final Category? selectedCategory;
+  final bool isLoading;
+  final ValueChanged<Category?> onCategorySelected;
+
+  const _CategorySelector({
+    required this.categories,
+    required this.selectedCategory,
+    required this.isLoading,
+    required this.onCategorySelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (isLoading) {
+      return Container(
+        height: 56,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: const Center(
+          child: SizedBox(
+            height: 24,
+            width: 24,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+        ),
+      );
+    }
+
+    if (categories.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    return Container(
+      height: 56,
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        border: Border(
+          bottom: BorderSide(
+            color: Theme.of(context).dividerColor,
+            width: 1,
+          ),
+        ),
+      ),
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        itemCount: categories.length + 1, // +1 för "Alla"
+        itemBuilder: (context, index) {
+          if (index == 0) {
+            // "Alla" chip
+            final isSelected = selectedCategory == null;
+            return Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: FilterChip(
+                label: const Text('Alla'),
+                selected: isSelected,
+                onSelected: (_) => onCategorySelected(null),
+                selectedColor: Theme.of(context).colorScheme.primaryContainer,
+                checkmarkColor: Theme.of(context).colorScheme.primary,
+              ),
+            );
+          }
+
+          final category = categories[index - 1];
+          final isSelected =
+              selectedCategory?.categoryId == category.categoryId;
+
+          return Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: FilterChip(
+              label: Text(category.name),
+              selected: isSelected,
+              onSelected: (_) => onCategorySelected(category),
+              selectedColor: Theme.of(context).colorScheme.primaryContainer,
+              checkmarkColor: Theme.of(context).colorScheme.primary,
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+// ============================================================
+// Product Card Widget
+// ============================================================
 class _ProductCard extends StatelessWidget {
   final Product product;
   final VoidCallback? onCartUpdated;
@@ -254,7 +399,9 @@ class _ProductCard extends StatelessWidget {
                       product.availability,
                       style: TextStyle(
                         fontSize: 11,
-                        color: product.inStock ? Colors.green[700] : Colors.red[700],
+                        color: product.inStock
+                            ? Colors.green[700]
+                            : Colors.red[700],
                       ),
                     ),
                   ],
@@ -268,6 +415,9 @@ class _ProductCard extends StatelessWidget {
   }
 }
 
+// ============================================================
+// Placeholder Image Widget
+// ============================================================
 class _PlaceholderImage extends StatelessWidget {
   const _PlaceholderImage();
 

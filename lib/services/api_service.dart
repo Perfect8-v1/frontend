@@ -3,77 +3,69 @@ import 'package:http/http.dart' as http;
 import '../config/api_config.dart';
 import '../models/health_response.dart';
 
-/// API Service for Perfect8 Backend
-/// 
-/// Handles all HTTP requests and responses
 class ApiService {
-  /// Check health of a specific service
-  /// 
-  /// Returns HealthResponse if successful, null if failed
+  // Statisk variabel för att lagra token centralt i appen
+  static String? _accessToken;
+
+  // Setter för att spara token efter lyckad inloggning
+  static void setToken(String token) => _accessToken = token;
+
+  // Getter för headers (växellådan)
+  static Map<String, String> get headers => {
+        'Content-Type': 'application/json',
+        if (_accessToken != null) 'Authorization': 'Bearer $_accessToken',
+      };
+
+  /// Centraliserad metod för alla autentiserade GET-anrop
+  Future<http.Response> get(String endpoint) async {
+    final url = Uri.parse('${ApiConfig.baseUrl}$endpoint');
+    return await http.get(url, headers: headers);
+  }
+
+  /// Centraliserad metod för alla autentiserade POST-anrop
+  Future<http.Response> post(String endpoint, Map<String, dynamic> body) async {
+    final url = Uri.parse('${ApiConfig.baseUrl}$endpoint');
+    return await http.post(
+      url,
+      headers: headers,
+      body: json.encode(body),
+    );
+  }
+
+  // ==========================================
+  // Hälsovårdskontroll-logik
+  // ==========================================
+
   Future<HealthResponse?> checkHealth(String serviceUrl) async {
     try {
       print('🔍 Checking health: $serviceUrl');
-      
-      // Make HTTP GET request
       final response = await http.get(
         Uri.parse(serviceUrl),
         headers: {'Content-Type': 'application/json'},
-      ).timeout(
-        const Duration(seconds: 5),
-        onTimeout: () {
-          throw Exception('Request timeout after 5 seconds');
-        },
-      );
-      
-      print('📡 Response status: ${response.statusCode}');
-      
-      // Check if request was successful
+      ).timeout(const Duration(seconds: 5));
+
       if (response.statusCode == 200) {
-        // Parse JSON response
-        final Map<String, dynamic> jsonData = json.decode(response.body);
-        print('✅ Health check successful: ${jsonData['status']}');
-        
-        return HealthResponse.fromJson(jsonData);
-      } else {
-        print('❌ Health check failed: ${response.statusCode}');
-        print('Response body: ${response.body}');
-        return null;
+        return HealthResponse.fromJson(json.decode(response.body));
       }
+      return null;
     } catch (e) {
-      print('❌ Error during health check: $e');
+      print('❌ Error: $e');
       return null;
     }
   }
-  
-  /// Check health of Admin Service
-  Future<HealthResponse?> checkAdminHealth() async {
-    return await checkHealth(ApiConfig.adminHealth);
-  }
-  
-  /// Check health of Blog Service
-  Future<HealthResponse?> checkBlogHealth() async {
-    return await checkHealth(ApiConfig.blogHealth);
-  }
-  
-  /// Check health of Email Service
-  Future<HealthResponse?> checkEmailHealth() async {
-    return await checkHealth(ApiConfig.emailHealth);
-  }
-  
-  /// Check health of Image Service
-  Future<HealthResponse?> checkImageHealth() async {
-    return await checkHealth(ApiConfig.imageHealth);
-  }
-  
-  /// Check health of Shop Service
-  Future<HealthResponse?> checkShopHealth() async {
-    return await checkHealth(ApiConfig.shopHealth);
-  }
-  
-  /// Check health of ALL services
+
+  Future<HealthResponse?> checkAdminHealth() async =>
+      await checkHealth(ApiConfig.adminHealth);
+  Future<HealthResponse?> checkBlogHealth() async =>
+      await checkHealth(ApiConfig.blogHealth);
+  Future<HealthResponse?> checkEmailHealth() async =>
+      await checkHealth(ApiConfig.emailHealth);
+  Future<HealthResponse?> checkImageHealth() async =>
+      await checkHealth(ApiConfig.imageHealth);
+  Future<HealthResponse?> checkShopHealth() async =>
+      await checkHealth(ApiConfig.shopHealth);
+
   Future<Map<String, HealthResponse?>> checkAllServices() async {
-    print('🔍 Checking all services...');
-    
     return {
       'Admin': await checkAdminHealth(),
       'Blog': await checkBlogHealth(),

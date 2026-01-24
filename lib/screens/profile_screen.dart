@@ -1,8 +1,8 @@
 // lib/screens/profile_screen.dart
 import 'package:flutter/material.dart';
 import '../models/customer_models.dart';
-import '../services/auth_service.dart';
 import '../services/customer_service.dart';
+import '../services/auth_service.dart';
 import '../services/api_exception.dart';
 import 'login_screen.dart';
 import 'addresses_screen.dart';
@@ -94,7 +94,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   Wrap(
                     spacing: 8,
                     children: _authService.roles.map((role) {
-                      final isAdminRole = role == 'ADMIN' || role == 'ROLE_ADMIN';
+                      final isAdminRole =
+                          role == 'ADMIN' || role == 'ROLE_ADMIN';
                       return Chip(
                         label: Text(
                           role.replaceAll('ROLE_', ''),
@@ -103,9 +104,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             fontSize: 12,
                           ),
                         ),
-                        backgroundColor: isAdminRole
-                            ? Colors.deepPurple
-                            : Colors.grey[200],
+                        backgroundColor:
+                            isAdminRole ? Colors.deepPurple : Colors.grey[200],
                       );
                     }).toList(),
                   ),
@@ -183,16 +183,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   String _getInitials() {
     if (_customer?.firstName != null && _customer?.lastName != null) {
-      return '${_customer!.firstName![0]}${_customer!.lastName![0]}'.toUpperCase();
+      return '${_customer!.firstName![0]}${_customer!.lastName![0]}'
+          .toUpperCase();
     }
     return (_authService.email?.substring(0, 1) ?? 'U').toUpperCase();
   }
 
   void _showEditProfileDialog() {
     final formKey = GlobalKey<FormState>();
-    final firstNameController = TextEditingController(text: _customer?.firstName ?? '');
-    final lastNameController = TextEditingController(text: _customer?.lastName ?? '');
-    final phoneController = TextEditingController(text: _customer?.phoneNumber ?? '');
+    final firstNameController =
+        TextEditingController(text: _customer?.firstName ?? '');
+    final lastNameController =
+        TextEditingController(text: _customer?.lastName ?? '');
+    final phoneController =
+        TextEditingController(text: _customer?.phoneNumber ?? '');
 
     showDialog(
       context: context,
@@ -249,7 +253,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 final updated = await _customerService.updateProfile(
                   firstName: firstNameController.text,
                   lastName: lastNameController.text,
-                  phone: phoneController.text.isNotEmpty ? phoneController.text : null,
+                  phone: phoneController.text.isNotEmpty
+                      ? phoneController.text
+                      : null,
                 );
 
                 if (mounted) {

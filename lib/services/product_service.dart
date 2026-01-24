@@ -3,15 +3,20 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/product_models.dart';
 import '../models/paginated_response.dart';
-import 'api_config.dart';
+import '../config/api_config.dart';
 import 'api_exception.dart';
 import 'auth_service.dart';
+import 'api_service.dart';
 
-/// Product service for shop-service API calls
+/// Product service for shop-service API calls via Gateway
 class ProductService {
   final AuthService _authService;
 
   ProductService(this._authService);
+
+  // ============================================================
+  // Publika produktfunktioner
+  // ============================================================
 
   /// Get products with pagination and filters
   Future<PaginatedResponse<Product>> getProducts({
@@ -33,17 +38,17 @@ class ProductService {
       if (inStock != null) 'inStock': inStock.toString(),
     };
 
-    final uri = Uri.parse('${ApiConfig.shopUrl}/api/products/')
+    // FIX: Använder shopUrl och ingen trailing slash innan query parameters
+    final uri = Uri.parse('${ApiConfig.shopUrl}/api/products')
         .replace(queryParameters: queryParams);
 
     final response = await http.get(
       uri,
-      headers: _authService.authHeaders,
+      headers: ApiService.headers,
     );
 
     if (response.statusCode == 200) {
       final json = jsonDecode(response.body);
-      // Backend wraps response in ApiResponse: { success, message, data }
       final data = json['data'] ?? json;
       return PaginatedResponse.fromJson(
         data,
@@ -56,14 +61,15 @@ class ProductService {
 
   /// Get single product by ID
   Future<Product> getProduct(int productId) async {
+    // FIX: shopUrl och ingen trailing slash
+    final url = '${ApiConfig.shopUrl}/api/products/$productId';
     final response = await http.get(
-      Uri.parse('${ApiConfig.shopUrl}/api/products/$productId/'),
-      headers: _authService.authHeaders,
+      Uri.parse(url),
+      headers: ApiService.headers,
     );
 
     if (response.statusCode == 200) {
       final json = jsonDecode(response.body);
-      // Backend wraps response in ApiResponse: { success, message, data }
       final data = json['data'] ?? json;
       return Product.fromJson(data);
     } else {
@@ -77,16 +83,16 @@ class ProductService {
     int page = 0,
     int size = 20,
   }) async {
-    final uri = Uri.parse('${ApiConfig.shopUrl}/api/products/search/')
+    final uri = Uri.parse('${ApiConfig.shopUrl}/api/products/search')
         .replace(queryParameters: {
-          'query': query,
-          'page': page.toString(),
-          'size': size.toString(),
-        });
+      'query': query,
+      'page': page.toString(),
+      'size': size.toString(),
+    });
 
     final response = await http.get(
       uri,
-      headers: _authService.authHeaders,
+      headers: ApiService.headers,
     );
 
     if (response.statusCode == 200) {
@@ -103,12 +109,12 @@ class ProductService {
 
   /// Get featured products
   Future<List<Product>> getFeaturedProducts({int limit = 10}) async {
-    final uri = Uri.parse('${ApiConfig.shopUrl}/api/products/featured/')
+    final uri = Uri.parse('${ApiConfig.shopUrl}/api/products/featured')
         .replace(queryParameters: {'limit': limit.toString()});
 
     final response = await http.get(
       uri,
-      headers: _authService.authHeaders,
+      headers: ApiService.headers,
     );
 
     if (response.statusCode == 200) {
@@ -128,15 +134,16 @@ class ProductService {
     int page = 0,
     int size = 20,
   }) async {
-    final uri = Uri.parse('${ApiConfig.shopUrl}/api/products/category/$categoryId/')
-        .replace(queryParameters: {
-          'page': page.toString(),
-          'size': size.toString(),
-        });
+    final uri =
+        Uri.parse('${ApiConfig.shopUrl}/api/products/category/$categoryId')
+            .replace(queryParameters: {
+      'page': page.toString(),
+      'size': size.toString(),
+    });
 
     final response = await http.get(
       uri,
-      headers: _authService.authHeaders,
+      headers: ApiService.headers,
     );
 
     if (response.statusCode == 200) {
@@ -153,9 +160,10 @@ class ProductService {
 
   /// Get categories
   Future<List<Category>> getCategories() async {
+    final url = '${ApiConfig.shopUrl}/api/categories';
     final response = await http.get(
-      Uri.parse('${ApiConfig.shopUrl}/api/categories/'),
-      headers: _authService.authHeaders,
+      Uri.parse(url),
+      headers: ApiService.headers,
     );
 
     if (response.statusCode == 200) {
@@ -169,16 +177,16 @@ class ProductService {
     }
   }
 
-  // ========== ADMIN CRUD OPERATIONS ==========
+  // ============================================================
+  // Administrativa funktioner (Admin only)
+  // ============================================================
 
-  /// Create a new product (Admin only)
+  /// Create a new product
   Future<Product> createProduct(Map<String, dynamic> productData) async {
+    final url = '${ApiConfig.shopUrl}/api/products';
     final response = await http.post(
-      Uri.parse('${ApiConfig.shopUrl}/api/products/'),
-      headers: {
-        ..._authService.authHeaders,
-        'Content-Type': 'application/json',
-      },
+      Uri.parse(url),
+      headers: ApiService.headers,
       body: jsonEncode(productData),
     );
 
@@ -191,14 +199,13 @@ class ProductService {
     }
   }
 
-  /// Update existing product (Admin only)
-  Future<Product> updateProduct(int productId, Map<String, dynamic> productData) async {
+  /// Update existing product
+  Future<Product> updateProduct(
+      int productId, Map<String, dynamic> productData) async {
+    final url = '${ApiConfig.shopUrl}/api/products/$productId';
     final response = await http.put(
-      Uri.parse('${ApiConfig.shopUrl}/api/products/$productId/'),
-      headers: {
-        ..._authService.authHeaders,
-        'Content-Type': 'application/json',
-      },
+      Uri.parse(url),
+      headers: ApiService.headers,
       body: jsonEncode(productData),
     );
 
@@ -211,11 +218,12 @@ class ProductService {
     }
   }
 
-  /// Delete product (Admin only) - soft delete
+  /// Delete product (soft delete)
   Future<void> deleteProduct(int productId) async {
+    final url = '${ApiConfig.shopUrl}/api/products/$productId';
     final response = await http.delete(
-      Uri.parse('${ApiConfig.shopUrl}/api/products/$productId/'),
-      headers: _authService.authHeaders,
+      Uri.parse(url),
+      headers: ApiService.headers,
     );
 
     if (response.statusCode != 200 && response.statusCode != 204) {
@@ -223,11 +231,12 @@ class ProductService {
     }
   }
 
-  /// Toggle product active status (Admin only)
+  /// Toggle product active status
   Future<Product> toggleProductStatus(int productId) async {
+    final url = '${ApiConfig.shopUrl}/api/products/$productId/toggle-status';
     final response = await http.patch(
-      Uri.parse('${ApiConfig.shopUrl}/api/products/$productId/toggle-status/'),
-      headers: _authService.authHeaders,
+      Uri.parse(url),
+      headers: ApiService.headers,
     );
 
     if (response.statusCode == 200) {

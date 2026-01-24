@@ -2,7 +2,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
-import 'api_config.dart';
+import '../config/api_config.dart';
 import 'api_exception.dart';
 import 'auth_service.dart';
 import '../models/customer_models.dart';
@@ -14,15 +14,19 @@ class CustomerService {
 
   /// Get current customer profile
   Future<Customer> getProfile() async {
-    final url = '${ApiConfig.shopUrl}/api/customers/profile/';
+    // MAGNUM OPUS FIX: Tog bort avslutande snedstreck
+    final url = '${ApiConfig.shopUrl}/api/customers/profile';
+    final headers = _authService.authHeaders;
     debugPrint('👤 CustomerService.getProfile() - URL: $url');
+    debugPrint('👤 CustomerService.getProfile() - Headers: $headers');
 
     final response = await http.get(
       Uri.parse(url),
-      headers: _authService.authHeaders,
+      headers: headers,
     );
 
-    debugPrint('👤 CustomerService.getProfile() - Status: ${response.statusCode}');
+    debugPrint(
+        '👤 CustomerService.getProfile() - Status: ${response.statusCode}');
 
     if (response.statusCode == 200) {
       final json = jsonDecode(response.body);
@@ -35,7 +39,8 @@ class CustomerService {
 
   /// Get customer addresses
   Future<List<Address>> getAddresses() async {
-    final url = '${ApiConfig.shopUrl}/api/customers/addresses/';
+    // MAGNUM OPUS FIX: Tog bort avslutande snedstreck
+    final url = '${ApiConfig.shopUrl}/api/customers/addresses';
     debugPrint('📍 CustomerService.getAddresses() - URL: $url');
 
     final response = await http.get(
@@ -43,7 +48,8 @@ class CustomerService {
       headers: _authService.authHeaders,
     );
 
-    debugPrint('📍 CustomerService.getAddresses() - Status: ${response.statusCode}');
+    debugPrint(
+        '📍 CustomerService.getAddresses() - Status: ${response.statusCode}');
 
     if (response.statusCode == 200) {
       final json = jsonDecode(response.body);
@@ -59,7 +65,8 @@ class CustomerService {
 
   /// Add new address
   Future<Address> addAddress(Map<String, dynamic> addressData) async {
-    final url = '${ApiConfig.shopUrl}/api/customers/addresses/';
+    // MAGNUM OPUS FIX: Tog bort avslutande snedstreck
+    final url = '${ApiConfig.shopUrl}/api/customers/addresses';
     debugPrint('📍 CustomerService.addAddress() - URL: $url');
 
     final response = await http.post(
@@ -71,7 +78,8 @@ class CustomerService {
       body: jsonEncode(addressData),
     );
 
-    debugPrint('📍 CustomerService.addAddress() - Status: ${response.statusCode}');
+    debugPrint(
+        '📍 CustomerService.addAddress() - Status: ${response.statusCode}');
 
     if (response.statusCode == 200 || response.statusCode == 201) {
       final json = jsonDecode(response.body);
@@ -84,7 +92,8 @@ class CustomerService {
 
   /// Delete address
   Future<void> deleteAddress(int addressId) async {
-    final url = '${ApiConfig.shopUrl}/api/customers/addresses/$addressId/';
+    // MAGNUM OPUS FIX: Tog bort avslutande snedstreck efter ID
+    final url = '${ApiConfig.shopUrl}/api/customers/addresses/$addressId';
     debugPrint('📍 CustomerService.deleteAddress() - URL: $url');
 
     final response = await http.delete(
@@ -92,7 +101,8 @@ class CustomerService {
       headers: _authService.authHeaders,
     );
 
-    debugPrint('📍 CustomerService.deleteAddress() - Status: ${response.statusCode}');
+    debugPrint(
+        '📍 CustomerService.deleteAddress() - Status: ${response.statusCode}');
 
     if (response.statusCode != 200 && response.statusCode != 204) {
       throw ApiException.fromResponse(response);
@@ -105,7 +115,8 @@ class CustomerService {
     String? lastName,
     String? phone,
   }) async {
-    final url = '${ApiConfig.shopUrl}/api/customers/profile/';
+    // MAGNUM OPUS FIX: Tog bort avslutande snedstreck
+    final url = '${ApiConfig.shopUrl}/api/customers/profile';
     debugPrint('👤 CustomerService.updateProfile() - URL: $url');
 
     final body = <String, dynamic>{};
@@ -122,7 +133,8 @@ class CustomerService {
       body: jsonEncode(body),
     );
 
-    debugPrint('👤 CustomerService.updateProfile() - Status: ${response.statusCode}');
+    debugPrint(
+        '👤 CustomerService.updateProfile() - Status: ${response.statusCode}');
 
     if (response.statusCode == 200) {
       final json = jsonDecode(response.body);

@@ -1,50 +1,46 @@
 /// API Configuration for Perfect8 Backend
 ///
-/// Updated to use API Gateway instead of direct service connections
+/// Updated to match Gateway Routing prefixes (application.yml)
 class ApiConfig {
-  // 🏠 LOCAL (utveckling på din dator)
-  // static const String baseUrl = 'http://localhost:8080';
-
   // 🌐 SERVER (production på p8.rantila.com)
-  static const String baseUrl = 'http://p8.rantila.com:8080';
+  static const String baseUrl = 'https://p8.rantila.com';
 
   // Gateway port (single entry point)
   static const int gatewayPort = 8080;
 
   // ==========================================
-  // API Gateway URLs (all traffic goes through Gateway)
+  // API Gateway URLs
   // ==========================================
 
-  /// Gateway base URL (all requests go through this)
+  /// Gateway base URL
   static String get gatewayUrl => baseUrl;
 
-  /// All services use Gateway - no direct service URLs needed
+  /// Admin & Auth (Gateway lyssnar direkt på /api/admin och /api/auth)
+  /// INGET prefix här!
   static String get adminUrl => gatewayUrl;
-  static String get blogUrl => gatewayUrl;
-  static String get emailUrl => gatewayUrl;
-  static String get imageUrl => gatewayUrl;
-  static String get shopUrl => gatewayUrl;
+
+  /// Shop Service (Gateway lyssnar på /shop/**)
+  /// Vi lägger till /shop så att anrop blir: .../shop/api/cart
+  static String get shopUrl => '$gatewayUrl/shop';
+
+  /// Blog Service (Gateway lyssnar på /blog/**)
+  static String get blogUrl => '$gatewayUrl/blog';
+
+  /// Email Service (Gateway lyssnar på /email/**)
+  static String get emailUrl => '$gatewayUrl/email';
+
+  /// Image Service (Gateway lyssnar på /image/**)
+  static String get imageUrl => '$gatewayUrl/image';
 
   // ==========================================
-  // Health check endpoints (via Gateway)
+  // Health check endpoints
   // ==========================================
 
-  /// Note: Actuator endpoints still use service-specific paths
-  /// Gateway routes /api/admin/actuator/** to admin-service
-  static String get adminHealth => '$gatewayUrl/api/admin/actuator/health';
-  static String get blogHealth => '$gatewayUrl/api/posts/actuator/health';
-  static String get emailHealth => '$gatewayUrl/api/email/actuator/health';
-  static String get imageHealth => '$gatewayUrl/api/images/actuator/health';
-  static String get shopHealth => '$gatewayUrl/api/shop/actuator/health';
-
-  // ==========================================
-  // Notes for developers
-  // ==========================================
-
-  /// IMPORTANT:
-  /// - All API calls now go through Gateway (port 8080)
-  /// - No /v1 in paths! Use /api/products NOT /api/v1/products
-  /// - Gateway handles routing to appropriate services
-  /// - Example: GET http://p8.rantila.com:8080/api/products
-  ///   → Gateway routes to shop-service:8085/api/products
+  // Dessa måste också ha prefixen för att hitta rätt via Gateway
+  static String get adminHealth =>
+      '$gatewayUrl/actuator/health'; // Admin är direkt under root
+  static String get shopHealth => '$shopUrl/actuator/health';
+  static String get blogHealth => '$blogUrl/actuator/health';
+  static String get emailHealth => '$emailUrl/actuator/health';
+  static String get imageHealth => '$imageUrl/actuator/health';
 }

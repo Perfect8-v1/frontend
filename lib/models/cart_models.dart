@@ -1,5 +1,5 @@
 // lib/models/cart_models.dart
-import '../services/api_config.dart';
+import '../config/api_config.dart';
 
 /// Helper to convert image URLs to proper HTTPS URLs via nginx
 String? _toFullImageUrl(String? url) {
@@ -55,27 +55,29 @@ class Cart {
   });
 
   factory Cart.fromJson(Map<String, dynamic> json) => Cart(
-    cartId: json['cartId'],
-    customerId: json['customerId'],
-    items: (json['items'] as List<dynamic>?)
-        ?.map((e) => CartItem.fromJson(e))
-        .toList() ?? [],
-    itemCount: json['itemCount'] ?? 0,
-    totalQuantity: json['totalQuantity'] ?? json['itemCount'] ?? 0,
-    totalAmount: (json['totalAmount'] as num?)?.toDouble() ?? 0,
-    discountAmount: (json['discountAmount'] as num?)?.toDouble(),
-    estimatedTax: (json['estimatedTax'] as num?)?.toDouble(),
-    estimatedShipping: (json['estimatedShipping'] as num?)?.toDouble(),
-    grandTotal: (json['grandTotal'] as num?)?.toDouble() ??
-                (json['totalAmount'] as num?)?.toDouble() ?? 0,
-    couponCode: json['couponCode'],
-    createdDate: json['createdDate'] != null
-        ? DateTime.parse(json['createdDate'])
-        : null,
-    updatedDate: json['updatedDate'] != null
-        ? DateTime.parse(json['updatedDate'])
-        : null,
-  );
+        cartId: json['cartId'],
+        customerId: json['customerId'],
+        items: (json['items'] as List<dynamic>?)
+                ?.map((e) => CartItem.fromJson(e))
+                .toList() ??
+            [],
+        itemCount: json['itemCount'] ?? 0,
+        totalQuantity: json['totalQuantity'] ?? json['itemCount'] ?? 0,
+        totalAmount: (json['totalAmount'] as num?)?.toDouble() ?? 0,
+        discountAmount: (json['discountAmount'] as num?)?.toDouble(),
+        estimatedTax: (json['estimatedTax'] as num?)?.toDouble(),
+        estimatedShipping: (json['estimatedShipping'] as num?)?.toDouble(),
+        grandTotal: (json['grandTotal'] as num?)?.toDouble() ??
+            (json['totalAmount'] as num?)?.toDouble() ??
+            0,
+        couponCode: json['couponCode'],
+        createdDate: json['createdDate'] != null
+            ? DateTime.parse(json['createdDate'])
+            : null,
+        updatedDate: json['updatedDate'] != null
+            ? DateTime.parse(json['updatedDate'])
+            : null,
+      );
 
   bool get isEmpty => items.isEmpty;
 
@@ -110,18 +112,19 @@ class CartItem {
   });
 
   factory CartItem.fromJson(Map<String, dynamic> json) => CartItem(
-    cartItemId: json['cartItemId'] ?? 0,
-    productId: json['productId'] ?? 0,
-    productName: json['productName'] ?? '',
-    productSku: json['productSku'],
-    imageUrl: _toFullImageUrl(json['imageUrl'] ?? json['thumbnailUrl']),
-    quantity: json['quantity'] ?? 1,
-    unitPrice: (json['unitPrice'] as num?)?.toDouble() ?? 0,
-    totalPrice: (json['totalPrice'] as num?)?.toDouble() ??
-                ((json['unitPrice'] as num?)?.toDouble() ?? 0) * (json['quantity'] ?? 1),
-    stockAvailable: json['stockAvailable'],
-    inStock: json['inStock'] ?? true,
-  );
+        cartItemId: json['cartItemId'] ?? 0,
+        productId: json['productId'] ?? 0,
+        productName: json['productName'] ?? '',
+        productSku: json['productSku'],
+        imageUrl: _toFullImageUrl(json['imageUrl'] ?? json['thumbnailUrl']),
+        quantity: json['quantity'] ?? 1,
+        unitPrice: (json['unitPrice'] as num?)?.toDouble() ?? 0,
+        totalPrice: (json['totalPrice'] as num?)?.toDouble() ??
+            ((json['unitPrice'] as num?)?.toDouble() ?? 0) *
+                (json['quantity'] ?? 1),
+        stockAvailable: json['stockAvailable'],
+        inStock: json['inStock'] ?? true,
+      );
 
   /// Get formatted price for display
   String get formattedUnitPrice => '${unitPrice.toStringAsFixed(0)} kr';
@@ -139,7 +142,7 @@ class AddToCartRequest {
   });
 
   Map<String, dynamic> toJson() => {
-    'productId': productId,
-    'quantity': quantity,
-  };
+        'productId': productId,
+        'quantity': quantity,
+      };
 }

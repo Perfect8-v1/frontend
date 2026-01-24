@@ -48,6 +48,13 @@ class Customer {
     return parts.join(' ');
   }
 
+  /// Sammansatt username (firstName + lastName)
+  String get username {
+    final fn = firstName ?? '';
+    final ln = lastName ?? '';
+    return (fn + ln).replaceAll(' ', '').toLowerCase();
+  }
+
   /// Get default shipping address if any
   Address? get defaultShippingAddress {
     return addresses.where((a) => a.defaultShipping).firstOrNull ??

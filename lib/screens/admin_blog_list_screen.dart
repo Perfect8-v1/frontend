@@ -1,9 +1,9 @@
 // lib/screens/admin_blog_list_screen.dart
 import 'package:flutter/material.dart';
 import '../models/blog_models.dart';
-import '../services/auth_service.dart';
 import '../services/blog_service.dart';
 import '../services/api_exception.dart';
+import '../services/auth_service.dart';
 import 'admin_blog_edit_screen.dart';
 
 /// Admin screen for managing blog posts
@@ -237,7 +237,8 @@ class _AdminBlogListScreenState extends State<AdminBlogListScreen> {
                 post.published ? 'Publicerad' : 'Utkast',
                 style: TextStyle(
                   fontSize: 10,
-                  color: post.published ? Colors.green[700] : Colors.orange[700],
+                  color:
+                      post.published ? Colors.green[700] : Colors.orange[700],
                 ),
               ),
             ),

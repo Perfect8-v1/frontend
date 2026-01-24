@@ -1,22 +1,28 @@
+//TODO add getCartItemCount
+
 // lib/services/cart_service.dart
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../models/cart_models.dart';
-import 'api_config.dart';
-import 'auth_service.dart';
+import '../config/api_config.dart';
 import 'api_exception.dart';
+import 'auth_service.dart';
+import 'api_service.dart';
 
-/// Cart service for shop-service API calls
+/// Cart service för shop-service API-anrop via Gateway.
+/// Uppdaterad för att hantera JWT-autentisering korrekt via Gateway.
 class CartService {
   final AuthService _authService;
 
   CartService(this._authService);
 
-  /// Get current cart
+  /// Hämtar aktuell varukorg för den inloggade användaren.
   Future<Cart> getCart() async {
-    final url = '${ApiConfig.shopUrl}/api/cart/';
-    final headers = _authService.authHeaders;
+    // Använder shopUrl och tar bort avslutande snedstreck för att undvika routing-fel i Gateway.
+    final url = '${ApiConfig.shopUrl}/api/cart';
+    final headers = ApiService.headers;
+
     debugPrint('🛒 CartService.getCart() - URL: $url');
     debugPrint('🛒 CartService.getCart() - Headers: $headers');
 
@@ -26,7 +32,10 @@ class CartService {
     );
 
     debugPrint('🛒 CartService.getCart() - Status: ${response.statusCode}');
-    debugPrint('🛒 CartService.getCart() - Body: ${response.body}');
+
+    if (response.statusCode != 200) {
+      debugPrint('🛒 CartService.getCart() - Response: ${response.body}');
+    }
 
     if (response.statusCode == 200) {
       final json = jsonDecode(response.body);
@@ -37,39 +46,14 @@ class CartService {
     }
   }
 
-  /// Add product to cart
+  /// Lägger till en produkt i varukorgen.
   Future<Cart> addToCart(int productId, {int quantity = 1}) async {
-    final url = '${ApiConfig.shopUrl}/api/cart/add/';
-    final body = jsonEncode({
-      'productId': productId,
-      'quantity': quantity,
-    });
-    debugPrint('🛒 CartService.addToCart() - URL: $url');
-    debugPrint('🛒 CartService.addToCart() - Body: $body');
+    final url = '${ApiConfig.shopUrl}/api/cart/add';
+    final headers = ApiService.headers;
 
     final response = await http.post(
       Uri.parse(url),
-      headers: _authService.authHeaders,
-      body: body,
-    );
-
-    debugPrint('🛒 CartService.addToCart() - Status: ${response.statusCode}');
-    debugPrint('🛒 CartService.addToCart() - Response: ${response.body}');
-
-    if (response.statusCode == 200) {
-      final json = jsonDecode(response.body);
-      final data = json['data'] ?? json;
-      return Cart.fromJson(data);
-    } else {
-      throw ApiException.fromResponse(response);
-    }
-  }
-
-  /// Update item quantity
-  Future<Cart> updateQuantity(int productId, int quantity) async {
-    final response = await http.put(
-      Uri.parse('${ApiConfig.shopUrl}/api/cart/update/'),
-      headers: _authService.authHeaders,
+      headers: headers,
       body: jsonEncode({
         'productId': productId,
         'quantity': quantity,
@@ -85,11 +69,18 @@ class CartService {
     }
   }
 
-  /// Remove item from cart
-  Future<Cart> removeItem(int productId) async {
-    final response = await http.delete(
-      Uri.parse('${ApiConfig.shopUrl}/api/cart/remove/$productId/'),
-      headers: _authService.authHeaders,
+  /// Uppdaterar kvantiteten för en vara i varukorgen.
+  Future<Cart> updateQuantity(int productId, int quantity) async {
+    final url = '${ApiConfig.shopUrl}/api/cart/update';
+    final headers = ApiService.headers;
+
+    final response = await http.put(
+      Uri.parse(url),
+      headers: headers,
+      body: jsonEncode({
+        'productId': productId,
+        'quantity': quantity,
+      }),
     );
 
     if (response.statusCode == 200) {
@@ -101,11 +92,33 @@ class CartService {
     }
   }
 
-  /// Clear entire cart
-  Future<void> clearCart() async {
+  /// Tar bort en produkt från varukorgen.
+  Future<Cart> removeItem(int productId) async {
+    final url = '${ApiConfig.shopUrl}/api/cart/remove/$productId';
+    final headers = ApiService.headers;
+
     final response = await http.delete(
-      Uri.parse('${ApiConfig.shopUrl}/api/cart/clear/'),
-      headers: _authService.authHeaders,
+      Uri.parse(url),
+      headers: headers,
+    );
+
+    if (response.statusCode == 200) {
+      final json = jsonDecode(response.body);
+      final data = json['data'] ?? json;
+      return Cart.fromJson(data);
+    } else {
+      throw ApiException.fromResponse(response);
+    }
+  }
+
+  /// Tömer hela varukorgen.
+  Future<void> clearCart() async {
+    final url = '${ApiConfig.shopUrl}/api/cart/clear';
+    final headers = ApiService.headers;
+
+    final response = await http.delete(
+      Uri.parse(url),
+      headers: headers,
     );
 
     if (response.statusCode != 200) {
@@ -113,11 +126,16 @@ class CartService {
     }
   }
 
-  /// Get cart item count
+  /// Hämtar antal artiklar i korgen.
+  /// Inaktiverad tills vidare för att fokusera på kritiska fel (401/500).
   Future<int> getCartItemCount() async {
+    // Returnerar 0 utan nätverksanrop för att minska brus i loggarna.
+    return 0;
+
+    /* final url = '${ApiConfig.shopUrl}/api/cart/count';
     final response = await http.get(
-      Uri.parse('${ApiConfig.shopUrl}/api/cart/count/'),
-      headers: _authService.authHeaders,
+      Uri.parse(url),
+      headers: ApiService.headers,
     );
 
     if (response.statusCode == 200) {
@@ -127,5 +145,6 @@ class CartService {
     } else {
       throw ApiException.fromResponse(response);
     }
+    */
   }
 }

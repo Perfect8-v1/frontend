@@ -1,9 +1,9 @@
 // lib/screens/admin_product_edit_screen.dart
 import 'package:flutter/material.dart';
 import '../models/product_models.dart';
-import '../services/auth_service.dart';
 import '../services/product_service.dart';
 import '../services/api_exception.dart';
+import '../services/auth_service.dart';
 
 /// Admin screen for creating/editing products
 class AdminProductEditScreen extends StatefulWidget {
@@ -117,7 +117,8 @@ class _AdminProductEditScreenState extends State<AdminProductEditScreen> {
     _priceController.text = product.price.toString();
     _discountPriceController.text = product.discountPrice?.toString() ?? '';
     _stockQuantityController.text = product.stockQuantity.toString();
-    _lowStockThresholdController.text = product.lowStockThreshold?.toString() ?? '';
+    _lowStockThresholdController.text =
+        product.lowStockThreshold?.toString() ?? '';
     _reorderPointController.text = product.reorderPoint?.toString() ?? '';
     _reorderQuantityController.text = product.reorderQuantity?.toString() ?? '';
     _weightController.text = product.weight?.toString() ?? '';
@@ -165,10 +166,18 @@ class _AdminProductEditScreenState extends State<AdminProductEditScreen> {
         'name': _nameController.text.trim(),
         'sku': _skuController.text.trim(),
         'description': _descriptionController.text.trim(),
-        'brand': _brandController.text.trim().isEmpty ? null : _brandController.text.trim(),
-        'manufacturer': _manufacturerController.text.trim().isEmpty ? null : _manufacturerController.text.trim(),
-        'model': _modelController.text.trim().isEmpty ? null : _modelController.text.trim(),
-        'barcode': _barcodeController.text.trim().isEmpty ? null : _barcodeController.text.trim(),
+        'brand': _brandController.text.trim().isEmpty
+            ? null
+            : _brandController.text.trim(),
+        'manufacturer': _manufacturerController.text.trim().isEmpty
+            ? null
+            : _manufacturerController.text.trim(),
+        'model': _modelController.text.trim().isEmpty
+            ? null
+            : _modelController.text.trim(),
+        'barcode': _barcodeController.text.trim().isEmpty
+            ? null
+            : _barcodeController.text.trim(),
         'price': double.parse(_priceController.text.trim()),
         'discountPrice': _discountPriceController.text.trim().isEmpty
             ? null
@@ -186,16 +195,34 @@ class _AdminProductEditScreenState extends State<AdminProductEditScreen> {
         'weight': _weightController.text.trim().isEmpty
             ? null
             : double.parse(_weightController.text.trim()),
-        'dimensions': _dimensionsController.text.trim().isEmpty ? null : _dimensionsController.text.trim(),
-        'color': _colorController.text.trim().isEmpty ? null : _colorController.text.trim(),
-        'size': _sizeController.text.trim().isEmpty ? null : _sizeController.text.trim(),
-        'material': _materialController.text.trim().isEmpty ? null : _materialController.text.trim(),
-        'metaTitle': _metaTitleController.text.trim().isEmpty ? null : _metaTitleController.text.trim(),
-        'metaDescription': _metaDescriptionController.text.trim().isEmpty ? null : _metaDescriptionController.text.trim(),
-        'metaKeywords': _metaKeywordsController.text.trim().isEmpty ? null : _metaKeywordsController.text.trim(),
+        'dimensions': _dimensionsController.text.trim().isEmpty
+            ? null
+            : _dimensionsController.text.trim(),
+        'color': _colorController.text.trim().isEmpty
+            ? null
+            : _colorController.text.trim(),
+        'size': _sizeController.text.trim().isEmpty
+            ? null
+            : _sizeController.text.trim(),
+        'material': _materialController.text.trim().isEmpty
+            ? null
+            : _materialController.text.trim(),
+        'metaTitle': _metaTitleController.text.trim().isEmpty
+            ? null
+            : _metaTitleController.text.trim(),
+        'metaDescription': _metaDescriptionController.text.trim().isEmpty
+            ? null
+            : _metaDescriptionController.text.trim(),
+        'metaKeywords': _metaKeywordsController.text.trim().isEmpty
+            ? null
+            : _metaKeywordsController.text.trim(),
         'tags': _tagsController.text.trim().isEmpty
             ? []
-            : _tagsController.text.split(',').map((t) => t.trim()).where((t) => t.isNotEmpty).toList(),
+            : _tagsController.text
+                .split(',')
+                .map((t) => t.trim())
+                .where((t) => t.isNotEmpty)
+                .toList(),
         'featured': _featured,
         'active': _active,
         'categoryId': _selectedCategoryId,
@@ -204,7 +231,8 @@ class _AdminProductEditScreenState extends State<AdminProductEditScreen> {
       };
 
       if (_isEditing) {
-        await _productService.updateProduct(widget.product!.productId, productData);
+        await _productService.updateProduct(
+            widget.product!.productId, productData);
       } else {
         await _productService.createProduct(productData);
       }
@@ -243,7 +271,8 @@ class _AdminProductEditScreenState extends State<AdminProductEditScreen> {
               child: SizedBox(
                 width: 24,
                 height: 24,
-                child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                child: CircularProgressIndicator(
+                    strokeWidth: 2, color: Colors.white),
               ),
             )
           else
@@ -280,7 +309,8 @@ class _AdminProductEditScreenState extends State<AdminProductEditScreen> {
                   Icon(Icons.error_outline, color: Colors.red[700]),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: Text(_errorMessage!, style: TextStyle(color: Colors.red[700])),
+                    child: Text(_errorMessage!,
+                        style: TextStyle(color: Colors.red[700])),
                   ),
                 ],
               ),
@@ -300,40 +330,56 @@ class _AdminProductEditScreenState extends State<AdminProductEditScreen> {
 
           // Sektion 2: Prissättning
           _buildSectionHeader('Prissättning'),
-          _buildTextField(_priceController, 'Pris *',
+          _buildTextField(
+            _priceController,
+            'Pris *',
             required: true,
             keyboardType: TextInputType.number,
             suffix: 'kr',
           ),
-          _buildTextField(_discountPriceController, 'Rabatterat pris',
+          _buildTextField(
+            _discountPriceController,
+            'Rabatterat pris',
             keyboardType: TextInputType.number,
             suffix: 'kr',
           ),
 
           // Sektion 3: Lager
           _buildSectionHeader('Lager'),
-          _buildTextField(_stockQuantityController, 'Lagersaldo *',
+          _buildTextField(
+            _stockQuantityController,
+            'Lagersaldo *',
             required: true,
             keyboardType: TextInputType.number,
             suffix: 'st',
           ),
-          _buildTextField(_lowStockThresholdController, 'Lågt lager-gräns',
+          _buildTextField(
+            _lowStockThresholdController,
+            'Lågt lager-gräns',
             keyboardType: TextInputType.number,
           ),
-          _buildTextField(_reorderPointController, 'Beställningspunkt',
+          _buildTextField(
+            _reorderPointController,
+            'Beställningspunkt',
             keyboardType: TextInputType.number,
           ),
-          _buildTextField(_reorderQuantityController, 'Beställningskvantitet',
+          _buildTextField(
+            _reorderQuantityController,
+            'Beställningskvantitet',
             keyboardType: TextInputType.number,
           ),
 
           // Sektion 4: Egenskaper
           _buildSectionHeader('Egenskaper'),
-          _buildTextField(_weightController, 'Vikt',
+          _buildTextField(
+            _weightController,
+            'Vikt',
             keyboardType: TextInputType.number,
             suffix: 'kg',
           ),
-          _buildTextField(_dimensionsController, 'Dimensioner',
+          _buildTextField(
+            _dimensionsController,
+            'Dimensioner',
             hint: 'T.ex. 10x20x5 cm',
           ),
           _buildTextField(_colorController, 'Färg'),
@@ -343,19 +389,27 @@ class _AdminProductEditScreenState extends State<AdminProductEditScreen> {
           // Sektion 5: Kategorisering
           _buildSectionHeader('Kategorisering'),
           _buildCategoryDropdown(),
-          _buildTextField(_tagsController, 'Taggar',
+          _buildTextField(
+            _tagsController,
+            'Taggar',
             hint: 'Separera med kommatecken',
           ),
 
           // Sektion 6: SEO
           _buildSectionHeader('SEO'),
-          _buildTextField(_metaTitleController, 'Meta-titel',
+          _buildTextField(
+            _metaTitleController,
+            'Meta-titel',
             hint: 'För sökmotorer',
           ),
-          _buildTextField(_metaDescriptionController, 'Meta-beskrivning',
+          _buildTextField(
+            _metaDescriptionController,
+            'Meta-beskrivning',
             maxLines: 2,
           ),
-          _buildTextField(_metaKeywordsController, 'Meta-nyckelord',
+          _buildTextField(
+            _metaKeywordsController,
+            'Meta-nyckelord',
             hint: 'Separera med kommatecken',
           ),
 
@@ -392,9 +446,9 @@ class _AdminProductEditScreenState extends State<AdminProductEditScreen> {
       child: Text(
         title,
         style: Theme.of(context).textTheme.titleMedium?.copyWith(
-          fontWeight: FontWeight.bold,
-          color: Theme.of(context).colorScheme.primary,
-        ),
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).colorScheme.primary,
+            ),
       ),
     );
   }
@@ -434,9 +488,10 @@ class _AdminProductEditScreenState extends State<AdminProductEditScreen> {
 
   Widget _buildCategoryDropdown() {
     // Only use selected value if it exists in the loaded categories
-    final validValue = _categories.any((c) => c.categoryId == _selectedCategoryId)
-        ? _selectedCategoryId
-        : null;
+    final validValue =
+        _categories.any((c) => c.categoryId == _selectedCategoryId)
+            ? _selectedCategoryId
+            : null;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -480,7 +535,8 @@ class _AdminProductEditScreenState extends State<AdminProductEditScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Huvudbild', style: TextStyle(fontWeight: FontWeight.w500)),
+            const Text('Huvudbild',
+                style: TextStyle(fontWeight: FontWeight.w500)),
             const SizedBox(height: 8),
             if (imageUrl != null)
               ClipRRect(

@@ -2,7 +2,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
-import 'api_config.dart';
+import '../config/api_config.dart';
 import 'api_exception.dart';
 import 'auth_service.dart';
 import '../models/order_models.dart';
@@ -13,7 +13,7 @@ class OrderService {
 
   OrderService(this._authService);
 
-  /// Create order from cart
+  /// Skapa order från varukorg
   Future<Order> createOrderFromCart({
     required Cart cart,
     required String shippingAddress,
@@ -21,17 +21,18 @@ class OrderService {
     String? paymentMethod,
     String? notes,
   }) async {
-    // Build order items from cart
-    final orderItems = cart.items.map((item) => {
-      'productId': item.productId,
-      'quantity': item.quantity,
-      'unitPrice': item.unitPrice,
-      'productName': item.productName,
-      'productSku': item.productSku,
-    }).toList();
+    final orderItems = cart.items
+        .map((item) => {
+              'productId': item.productId,
+              'quantity': item.quantity,
+              'unitPrice': item.unitPrice,
+              'productName': item.productName,
+              'productSku': item.productSku,
+            })
+        .toList();
 
     final requestBody = {
-      'customerId': cart.customerId,  // Use cart's customerId, not authService
+      'customerId': cart.customerId,
       'orderItems': orderItems,
       'subtotal': cart.totalAmount,
       'taxAmount': cart.estimatedTax ?? 0,
@@ -46,10 +47,11 @@ class OrderService {
       'source': 'MOBILE',
     };
 
-    final url = '${ApiConfig.shopUrl}/api/orders/';
+    // FIX: shopUrl och ingen trailing slash
+    final url = '${ApiConfig.shopUrl}/api/orders';
     final body = jsonEncode(requestBody);
+
     debugPrint('📦 OrderService.createOrder() - URL: $url');
-    debugPrint('📦 OrderService.createOrder() - Body: $body');
 
     final response = await http.post(
       Uri.parse(url),
@@ -60,15 +62,15 @@ class OrderService {
       body: body,
     );
 
-    debugPrint('📦 OrderService.createOrder() - Status: ${response.statusCode}');
-    debugPrint('📦 OrderService.createOrder() - Response: ${response.body}');
+    debugPrint(
+        '📦 OrderService.createOrder() - Status: ${response.statusCode}');
 
     if (response.statusCode == 200 || response.statusCode == 201) {
       final json = jsonDecode(response.body);
       final data = json['data'] ?? json;
       final order = Order.fromJson(data);
 
-      // Backend may not return items in response - use cart items instead
+      // Fallback: Om backend inte returnerar artiklar, använd varukorgens artiklar
       if (order.items.isEmpty && cart.items.isNotEmpty) {
         return Order(
           orderId: order.orderId,
@@ -102,30 +104,29 @@ class OrderService {
           deliveredDate: order.deliveredDate,
         );
       }
-
       return order;
     } else {
       throw ApiException.fromResponse(response);
     }
   }
 
-  /// Get customer's orders
+  /// Hämta inloggad kunds ordrar
   Future<List<Order>> getMyOrders({int page = 0, int size = 20}) async {
     final userId = _authService.userId;
     if (userId == null) {
       throw ApiException(statusCode: 401, message: 'Inte inloggad');
     }
 
+    final url =
+        '${ApiConfig.shopUrl}/api/orders/customer/$userId?page=$page&size=$size';
     final response = await http.get(
-      Uri.parse('${ApiConfig.shopUrl}/api/orders/customer/$userId/?page=$page&size=$size'),
+      Uri.parse(url),
       headers: _authService.authHeaders,
     );
 
     if (response.statusCode == 200) {
       final json = jsonDecode(response.body);
       final data = json['data'] ?? json;
-
-      // Handle paginated response
       final content = data['content'] ?? data;
       if (content is List) {
         return content.map((item) => Order.fromJson(item)).toList();
@@ -136,10 +137,13 @@ class OrderService {
     }
   }
 
-  /// Get order by ID
+  /// Hämta specifik order via ID
   Future<Order> getOrder(int orderId) async {
+    // FIX: shopUrl och ingen trailing slash
+    final url = '${ApiConfig.shopUrl}/api/orders/$orderId';
+
     final response = await http.get(
-      Uri.parse('${ApiConfig.shopUrl}/api/orders/$orderId/'),
+      Uri.parse(url),
       headers: _authService.authHeaders,
     );
 
@@ -152,9 +156,10 @@ class OrderService {
     }
   }
 
-  /// Cancel order
+  /// Avbryt order
   Future<Order> cancelOrder(int orderId, {String? reason}) async {
-    final uri = Uri.parse('${ApiConfig.shopUrl}/api/orders/$orderId/cancel/')
+    // FIX: shopUrl och ingen trailing slash innan query params
+    final uri = Uri.parse('${ApiConfig.shopUrl}/api/orders/$orderId/cancel')
         .replace(queryParameters: reason != null ? {'reason': reason} : null);
 
     final response = await http.post(

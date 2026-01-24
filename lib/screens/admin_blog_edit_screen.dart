@@ -1,8 +1,8 @@
 // lib/screens/admin_blog_edit_screen.dart
 import 'package:flutter/material.dart';
 import '../models/blog_models.dart';
-import '../services/auth_service.dart';
 import '../services/blog_service.dart';
+import '../services/auth_service.dart';
 import '../services/api_exception.dart';
 
 /// Admin screen for creating/editing blog posts
@@ -91,7 +91,8 @@ class _AdminBlogEditScreenState extends State<AdminBlogEditScreen> {
         Navigator.pop(context, true);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(_isEditing ? 'Inlägget uppdaterades' : 'Inlägget skapades'),
+            content: Text(
+                _isEditing ? 'Inlägget uppdaterades' : 'Inlägget skapades'),
           ),
         );
       }

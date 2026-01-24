@@ -1,7 +1,7 @@
 // lib/screens/login_screen.dart
 import 'package:flutter/material.dart';
-import '../services/auth_service.dart';
 import '../services/api_exception.dart';
+import '../services/auth_service.dart';
 import 'main_screen.dart';
 import 'register_screen.dart';
 
@@ -99,8 +99,8 @@ class _LoginScreenState extends State<LoginScreen> {
                     Text(
                       'Logga in på ditt konto',
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: Colors.grey[600],
-                      ),
+                            color: Colors.grey[600],
+                          ),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 32),
@@ -164,8 +164,8 @@ class _LoginScreenState extends State<LoginScreen> {
                         suffixIcon: IconButton(
                           icon: Icon(
                             _obscurePassword
-                              ? Icons.visibility_outlined
-                              : Icons.visibility_off_outlined,
+                                ? Icons.visibility_outlined
+                                : Icons.visibility_off_outlined,
                           ),
                           onPressed: () {
                             setState(() {

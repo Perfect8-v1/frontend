@@ -1,9 +1,9 @@
 // lib/screens/cart_screen.dart
 import 'package:flutter/material.dart';
 import '../models/cart_models.dart';
-import '../services/auth_service.dart';
 import '../services/cart_service.dart';
 import '../services/api_exception.dart';
+import '../services/auth_service.dart';
 import 'checkout_screen.dart';
 
 class CartScreen extends StatefulWidget {
@@ -64,7 +64,8 @@ class _CartScreenState extends State<CartScreen> {
     }
 
     try {
-      final cart = await _cartService.updateQuantity(item.productId, newQuantity);
+      final cart =
+          await _cartService.updateQuantity(item.productId, newQuantity);
       setState(() => _cart = cart);
       widget.onCartUpdated?.call();
     } on ApiException catch (e) {
@@ -92,7 +93,8 @@ class _CartScreenState extends State<CartScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Töm kundvagn?'),
-        content: const Text('Är du säker på att du vill ta bort alla produkter?'),
+        content:
+            const Text('Är du säker på att du vill ta bort alla produkter?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -150,9 +152,8 @@ class _CartScreenState extends State<CartScreen> {
         ],
       ),
       body: _buildBody(),
-      bottomNavigationBar: _cart != null && !_cart!.isEmpty
-          ? _buildCheckoutBar()
-          : null,
+      bottomNavigationBar:
+          _cart != null && !_cart!.isEmpty ? _buildCheckoutBar() : null,
     );
   }
 
@@ -184,7 +185,8 @@ class _CartScreenState extends State<CartScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.shopping_cart_outlined, size: 80, color: Colors.grey[400]),
+            Icon(Icons.shopping_cart_outlined,
+                size: 80, color: Colors.grey[400]),
             const SizedBox(height: 16),
             Text(
               'Din kundvagn är tom',
@@ -213,7 +215,8 @@ class _CartScreenState extends State<CartScreen> {
         itemBuilder: (context, index) {
           return _CartItemCard(
             item: _cart!.items[index],
-            onQuantityChanged: (qty) => _updateQuantity(_cart!.items[index], qty),
+            onQuantityChanged: (qty) =>
+                _updateQuantity(_cart!.items[index], qty),
             onRemove: () => _removeItem(_cart!.items[index]),
           );
         },

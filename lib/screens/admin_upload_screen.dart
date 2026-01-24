@@ -4,9 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import '../services/auth_service.dart';
-import '../services/api_config.dart';
+import '../config/api_config.dart';
 import 'admin_product_images_screen.dart';
+import '../services/auth_service.dart';
 
 class AdminUploadScreen extends StatefulWidget {
   const AdminUploadScreen({super.key});
@@ -74,7 +74,8 @@ class _AdminUploadScreenState extends State<AdminUploadScreen> {
         final data = jsonDecode(response.body);
         setState(() {
           _uploadResult = 'Uppladdning lyckades!';
-          _uploadedImages.insert(0, data['originalUrl'] ?? data['thumbnailUrl'] ?? '');
+          _uploadedImages.insert(
+              0, data['originalUrl'] ?? data['thumbnailUrl'] ?? '');
           _selectedImage = null;
         });
       } else {
@@ -195,9 +196,8 @@ class _AdminUploadScreenState extends State<AdminUploadScreen> {
 
             // Upload button
             FilledButton.icon(
-              onPressed: _selectedImage != null && !_isUploading
-                  ? _uploadImage
-                  : null,
+              onPressed:
+                  _selectedImage != null && !_isUploading ? _uploadImage : null,
               icon: _isUploading
                   ? const SizedBox(
                       width: 20,

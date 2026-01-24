@@ -68,9 +68,8 @@ class _AuthCheckScreenState extends State<AuthCheckScreen> {
     // Navigate based on auth state
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(
-        builder: (context) => authService.isLoggedIn
-            ? const MainScreen()
-            : const LoginScreen(),
+        builder: (context) =>
+            authService.isLoggedIn ? const MainScreen() : const LoginScreen(),
       ),
     );
   }

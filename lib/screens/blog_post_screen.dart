@@ -1,10 +1,10 @@
 // lib/screens/blog_post_screen.dart
 import 'package:flutter/material.dart';
 import '../models/blog_models.dart';
-import '../services/auth_service.dart';
 import '../services/blog_service.dart';
-import '../services/api_config.dart';
+import '../config/api_config.dart';
 import '../services/api_exception.dart';
+import '../services/auth_service.dart';
 
 /// Screen for viewing a single blog post
 class BlogPostScreen extends StatefulWidget {

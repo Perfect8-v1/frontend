@@ -1,5 +1,5 @@
 // lib/models/product_models.dart
-import '../services/api_config.dart';
+import '../config/api_config.dart';
 
 /// Helper to convert image URLs to proper HTTPS URLs via nginx
 ///
@@ -131,102 +131,101 @@ class Product {
   });
 
   factory Product.fromJson(Map<String, dynamic> json) => Product(
-    productId: json['productId'],
-    name: json['name'] ?? '',
-    description: json['description'],
-    sku: json['sku'],
-    price: (json['price'] as num?)?.toDouble() ?? 0.0,
-    discountPrice: json['discountPrice'] != null
-        ? (json['discountPrice'] as num).toDouble()
-        : null,
-    brand: json['brand'],
-    manufacturer: json['manufacturer'],
-    model: json['model'],
-    barcode: json['barcode'],
-    color: json['color'],
-    size: json['size'],
-    material: json['material'],
-    stockQuantity: json['stockQuantity'] ?? 0,
-    lowStockThreshold: json['lowStockThreshold'],
-    reorderPoint: json['reorderPoint'],
-    reorderQuantity: json['reorderQuantity'],
-    weight: json['weight'] != null
-        ? (json['weight'] as num).toDouble()
-        : null,
-    dimensions: json['dimensions'],
-    imageUrl: _toFullImageUrl(json['imageUrl']),
-    galleryImages: (json['galleryImages'] as List<dynamic>?)
-        ?.map((e) => _toFullImageUrl(e.toString()))
-        .where((e) => e != null)
-        .cast<String>()
-        .toList() ?? [],
-    category: json['category'] ?? json['categoryName'],
-    categoryId: json['categoryId'],
-    tags: (json['tags'] as List<dynamic>?)
-        ?.map((e) => e.toString())
-        .toList() ?? [],
-    relatedProductIds: (json['relatedProductIds'] as List<dynamic>?)
-        ?.map((e) => e as int)
-        .toList() ?? [],
-    metaTitle: json['metaTitle'],
-    metaDescription: json['metaDescription'],
-    metaKeywords: json['metaKeywords'],
-    featured: json['featured'] ?? false,
-    active: json['active'] ?? true,
-    views: json['views'] ?? 0,
-    salesCount: json['salesCount'] ?? 0,
-    rating: (json['rating'] as num?)?.toDouble() ?? 0.0,
-    reviewCount: json['reviewCount'] ?? 0,
-    createdDate: json['createdDate'] != null
-        ? DateTime.parse(json['createdDate'])
-        : null,
-    updatedDate: json['updatedDate'] != null
-        ? DateTime.parse(json['updatedDate'])
-        : null,
-  );
+        productId: json['productId'],
+        name: json['name'] ?? '',
+        description: json['description'],
+        sku: json['sku'],
+        price: (json['price'] as num?)?.toDouble() ?? 0.0,
+        discountPrice: json['discountPrice'] != null
+            ? (json['discountPrice'] as num).toDouble()
+            : null,
+        brand: json['brand'],
+        manufacturer: json['manufacturer'],
+        model: json['model'],
+        barcode: json['barcode'],
+        color: json['color'],
+        size: json['size'],
+        material: json['material'],
+        stockQuantity: json['stockQuantity'] ?? 0,
+        lowStockThreshold: json['lowStockThreshold'],
+        reorderPoint: json['reorderPoint'],
+        reorderQuantity: json['reorderQuantity'],
+        weight:
+            json['weight'] != null ? (json['weight'] as num).toDouble() : null,
+        dimensions: json['dimensions'],
+        imageUrl: _toFullImageUrl(json['imageUrl']),
+        galleryImages: (json['galleryImages'] as List<dynamic>?)
+                ?.map((e) => _toFullImageUrl(e.toString()))
+                .where((e) => e != null)
+                .cast<String>()
+                .toList() ??
+            [],
+        category: json['category'] ?? json['categoryName'],
+        categoryId: json['categoryId'],
+        tags: (json['tags'] as List<dynamic>?)
+                ?.map((e) => e.toString())
+                .toList() ??
+            [],
+        relatedProductIds: (json['relatedProductIds'] as List<dynamic>?)
+                ?.map((e) => e as int)
+                .toList() ??
+            [],
+        metaTitle: json['metaTitle'],
+        metaDescription: json['metaDescription'],
+        metaKeywords: json['metaKeywords'],
+        featured: json['featured'] ?? false,
+        active: json['active'] ?? true,
+        views: json['views'] ?? 0,
+        salesCount: json['salesCount'] ?? 0,
+        rating: (json['rating'] as num?)?.toDouble() ?? 0.0,
+        reviewCount: json['reviewCount'] ?? 0,
+        createdDate: json['createdDate'] != null
+            ? DateTime.parse(json['createdDate'])
+            : null,
+        updatedDate: json['updatedDate'] != null
+            ? DateTime.parse(json['updatedDate'])
+            : null,
+      );
 
   /// Convert to JSON for API requests (create/update)
   Map<String, dynamic> toJson() => {
-    'name': name,
-    'description': description,
-    'sku': sku,
-    'price': price,
-    'discountPrice': discountPrice,
-    'brand': brand,
-    'manufacturer': manufacturer,
-    'model': model,
-    'barcode': barcode,
-    'color': color,
-    'size': size,
-    'material': material,
-    'stockQuantity': stockQuantity,
-    'lowStockThreshold': lowStockThreshold,
-    'reorderPoint': reorderPoint,
-    'reorderQuantity': reorderQuantity,
-    'weight': weight,
-    'dimensions': dimensions,
-    'imageUrl': imageUrl,
-    'galleryImages': galleryImages,
-    'categoryId': categoryId,
-    'tags': tags,
-    'relatedProductIds': relatedProductIds,
-    'metaTitle': metaTitle,
-    'metaDescription': metaDescription,
-    'metaKeywords': metaKeywords,
-    'featured': featured,
-    'active': active,
-  };
+        'name': name,
+        'description': description,
+        'sku': sku,
+        'price': price,
+        'discountPrice': discountPrice,
+        'brand': brand,
+        'manufacturer': manufacturer,
+        'model': model,
+        'barcode': barcode,
+        'color': color,
+        'size': size,
+        'material': material,
+        'stockQuantity': stockQuantity,
+        'lowStockThreshold': lowStockThreshold,
+        'reorderPoint': reorderPoint,
+        'reorderQuantity': reorderQuantity,
+        'weight': weight,
+        'dimensions': dimensions,
+        'imageUrl': imageUrl,
+        'galleryImages': galleryImages,
+        'categoryId': categoryId,
+        'tags': tags,
+        'relatedProductIds': relatedProductIds,
+        'metaTitle': metaTitle,
+        'metaDescription': metaDescription,
+        'metaKeywords': metaKeywords,
+        'featured': featured,
+        'active': active,
+      };
 
   /// Check if product has a discount
   bool get hasDiscount =>
-      discountPrice != null &&
-      discountPrice! > 0 &&
-      discountPrice! < price;
+      discountPrice != null && discountPrice! > 0 && discountPrice! < price;
 
   /// Get discount percentage
-  double get discountPercentage => hasDiscount
-      ? ((price - discountPrice!) / price * 100)
-      : 0;
+  double get discountPercentage =>
+      hasDiscount ? ((price - discountPrice!) / price * 100) : 0;
 
   /// Get effective price (discount or regular)
   double get effectivePrice => hasDiscount ? discountPrice! : price;
@@ -294,12 +293,12 @@ class Category {
   });
 
   factory Category.fromJson(Map<String, dynamic> json) => Category(
-    categoryId: json['categoryId'],
-    name: json['name'] ?? '',
-    description: json['description'],
-    slug: json['slug'],
-    parentId: json['parentId'],
-    productCount: json['productCount'] ?? 0,
-    imageUrl: json['imageUrl'],
-  );
+        categoryId: json['categoryId'],
+        name: json['name'] ?? '',
+        description: json['description'],
+        slug: json['slug'],
+        parentId: json['parentId'],
+        productCount: json['productCount'] ?? 0,
+        imageUrl: json['imageUrl'],
+      );
 }

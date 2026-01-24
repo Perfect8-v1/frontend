@@ -1,8 +1,8 @@
 // lib/screens/addresses_screen.dart
 import 'package:flutter/material.dart';
 import '../models/customer_models.dart';
-import '../services/auth_service.dart';
 import '../services/customer_service.dart';
+import '../services/auth_service.dart';
 import '../services/api_exception.dart';
 
 class AddressesScreen extends StatefulWidget {
@@ -102,7 +102,8 @@ class _AddressesScreenState extends State<AddressesScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.location_off_outlined, size: 64, color: Colors.grey[400]),
+            Icon(Icons.location_off_outlined,
+                size: 64, color: Colors.grey[400]),
             const SizedBox(height: 16),
             Text(
               'Inga adresser sparade',
@@ -156,7 +157,8 @@ class _AddressesScreenState extends State<AddressesScreen> {
                   ),
                 if (isDefault)
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
                       color: Colors.green[100],
                       borderRadius: BorderRadius.circular(4),
@@ -175,9 +177,9 @@ class _AddressesScreenState extends State<AddressesScreen> {
             const SizedBox(height: 8),
 
             // Address lines
-            if (address.streetAddress != null)
-              Text(address.streetAddress!),
-            if (address.addressLine2 != null && address.addressLine2!.isNotEmpty)
+            if (address.streetAddress != null) Text(address.streetAddress!),
+            if (address.addressLine2 != null &&
+                address.addressLine2!.isNotEmpty)
               Text(address.addressLine2!),
 
             // City, postal code
@@ -186,8 +188,7 @@ class _AddressesScreenState extends State<AddressesScreen> {
             ),
 
             // Country
-            if (address.country != null)
-              Text(address.country!),
+            if (address.country != null) Text(address.country!),
 
             // Phone
             if (address.phoneNumber != null) ...[
@@ -217,8 +218,10 @@ class _AddressesScreenState extends State<AddressesScreen> {
                 const SizedBox(width: 8),
                 TextButton.icon(
                   onPressed: () => _confirmDeleteAddress(address),
-                  icon: Icon(Icons.delete_outline, size: 18, color: Colors.red[700]),
-                  label: Text('Ta bort', style: TextStyle(color: Colors.red[700])),
+                  icon: Icon(Icons.delete_outline,
+                      size: 18, color: Colors.red[700]),
+                  label:
+                      Text('Ta bort', style: TextStyle(color: Colors.red[700])),
                 ),
               ],
             ),
@@ -240,11 +243,16 @@ class _AddressesScreenState extends State<AddressesScreen> {
     final isEditing = existingAddress != null;
     final formKey = GlobalKey<FormState>();
 
-    final recipientController = TextEditingController(text: existingAddress?.recipientName ?? '');
-    final streetController = TextEditingController(text: existingAddress?.streetAddress ?? '');
-    final postalCodeController = TextEditingController(text: existingAddress?.postalCode ?? '');
-    final cityController = TextEditingController(text: existingAddress?.city ?? '');
-    final phoneController = TextEditingController(text: existingAddress?.phoneNumber ?? '');
+    final recipientController =
+        TextEditingController(text: existingAddress?.recipientName ?? '');
+    final streetController =
+        TextEditingController(text: existingAddress?.streetAddress ?? '');
+    final postalCodeController =
+        TextEditingController(text: existingAddress?.postalCode ?? '');
+    final cityController =
+        TextEditingController(text: existingAddress?.city ?? '');
+    final phoneController =
+        TextEditingController(text: existingAddress?.phoneNumber ?? '');
 
     showDialog(
       context: context,
@@ -284,7 +292,8 @@ class _AddressesScreenState extends State<AddressesScreen> {
                           labelText: 'Postnr *',
                           border: OutlineInputBorder(),
                         ),
-                        validator: (v) => v?.isEmpty ?? true ? 'Obligatoriskt' : null,
+                        validator: (v) =>
+                            v?.isEmpty ?? true ? 'Obligatoriskt' : null,
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -295,7 +304,8 @@ class _AddressesScreenState extends State<AddressesScreen> {
                           labelText: 'Ort *',
                           border: OutlineInputBorder(),
                         ),
-                        validator: (v) => v?.isEmpty ?? true ? 'Obligatoriskt' : null,
+                        validator: (v) =>
+                            v?.isEmpty ?? true ? 'Obligatoriskt' : null,
                       ),
                     ),
                   ],

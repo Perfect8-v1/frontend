@@ -2,12 +2,11 @@
 import 'package:flutter/material.dart';
 import '../models/cart_models.dart';
 import '../models/order_models.dart';
-import '../models/customer_models.dart';
-import '../services/auth_service.dart';
 import '../services/order_service.dart';
 import '../services/cart_service.dart';
 import '../services/customer_service.dart';
 import '../services/api_exception.dart';
+import '../services/auth_service.dart';
 import '../services/pdf_service.dart';
 import '../services/email_service.dart';
 
@@ -194,7 +193,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                     Icon(Icons.error_outline, color: Colors.red[700]),
                     const SizedBox(width: 8),
                     Expanded(
-                      child: Text(_errorMessage!, style: TextStyle(color: Colors.red[700])),
+                      child: Text(_errorMessage!,
+                          style: TextStyle(color: Colors.red[700])),
                     ),
                   ],
                 ),
@@ -237,7 +237,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                           color: Colors.white,
                         ),
                       )
-                    : const Text('Lägg beställning', style: TextStyle(fontSize: 16)),
+                    : const Text('Lägg beställning',
+                        style: TextStyle(fontSize: 16)),
               ),
             ),
             const SizedBox(height: 32),
@@ -289,7 +290,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                 Text('${widget.cart.totalAmount.round()} kr'),
               ],
             ),
-            if (widget.cart.estimatedShipping != null && widget.cart.estimatedShipping! > 0) ...[
+            if (widget.cart.estimatedShipping != null &&
+                widget.cart.estimatedShipping! > 0) ...[
               const SizedBox(height: 4),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -303,10 +305,13 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('Totalt', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                const Text('Totalt',
+                    style:
+                        TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                 Text(
                   '${widget.cart.grandTotal.round()} kr',
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  style: const TextStyle(
+                      fontWeight: FontWeight.bold, fontSize: 16),
                 ),
               ],
             ),
@@ -331,7 +336,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       labelText: 'Förnamn *',
                       border: OutlineInputBorder(),
                     ),
-                    validator: (v) => v?.isEmpty ?? true ? 'Obligatoriskt' : null,
+                    validator: (v) =>
+                        v?.isEmpty ?? true ? 'Obligatoriskt' : null,
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -342,7 +348,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       labelText: 'Efternamn *',
                       border: OutlineInputBorder(),
                     ),
-                    validator: (v) => v?.isEmpty ?? true ? 'Obligatoriskt' : null,
+                    validator: (v) =>
+                        v?.isEmpty ?? true ? 'Obligatoriskt' : null,
                   ),
                 ),
               ],
@@ -368,7 +375,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       border: OutlineInputBorder(),
                     ),
                     keyboardType: TextInputType.number,
-                    validator: (v) => v?.isEmpty ?? true ? 'Obligatoriskt' : null,
+                    validator: (v) =>
+                        v?.isEmpty ?? true ? 'Obligatoriskt' : null,
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -379,7 +387,8 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                       labelText: 'Ort *',
                       border: OutlineInputBorder(),
                     ),
-                    validator: (v) => v?.isEmpty ?? true ? 'Obligatoriskt' : null,
+                    validator: (v) =>
+                        v?.isEmpty ?? true ? 'Obligatoriskt' : null,
                   ),
                 ),
               ],
@@ -443,7 +452,8 @@ class OrderConfirmationScreen extends StatefulWidget {
   });
 
   @override
-  State<OrderConfirmationScreen> createState() => _OrderConfirmationScreenState();
+  State<OrderConfirmationScreen> createState() =>
+      _OrderConfirmationScreenState();
 }
 
 class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
@@ -513,7 +523,8 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.email_outlined, size: 16, color: Colors.grey[600]),
+                    Icon(Icons.email_outlined,
+                        size: 16, color: Colors.grey[600]),
                     const SizedBox(width: 4),
                     Text(
                       'Bekräftelse skickas till din e-post',
@@ -532,7 +543,8 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                       const Divider(),
                       _buildInfoRow('Betalning', widget.order.paymentMethod),
                       const Divider(),
-                      _buildInfoRow('Totalt', '${widget.order.total.round()} kr'),
+                      _buildInfoRow(
+                          'Totalt', '${widget.order.total.round()} kr'),
                     ],
                   ),
                 ),
@@ -551,7 +563,9 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       : const Icon(Icons.print),
-                  label: Text(_isPrintingInvoice ? 'Skapar PDF...' : 'Skriv ut / Spara faktura'),
+                  label: Text(_isPrintingInvoice
+                      ? 'Skapar PDF...'
+                      : 'Skriv ut / Spara faktura'),
                 ),
               ),
               const SizedBox(height: 12),

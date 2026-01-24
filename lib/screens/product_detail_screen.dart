@@ -1,16 +1,17 @@
 // lib/screens/product_detail_screen.dart
 import 'package:flutter/material.dart';
 import '../models/product_models.dart';
-import '../services/auth_service.dart';
 import '../services/cart_service.dart';
 import '../services/api_exception.dart';
+import '../services/auth_service.dart';
 import 'cart_screen.dart';
 
 class ProductDetailScreen extends StatefulWidget {
   final Product product;
   final VoidCallback? onCartUpdated;
 
-  const ProductDetailScreen({super.key, required this.product, this.onCartUpdated});
+  const ProductDetailScreen(
+      {super.key, required this.product, this.onCartUpdated});
 
   @override
   State<ProductDetailScreen> createState() => _ProductDetailScreenState();
@@ -119,8 +120,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   Text(
                     product.name,
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+                          fontWeight: FontWeight.bold,
+                        ),
                   ),
                   const SizedBox(height: 8),
 
@@ -148,8 +149,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     Text(
                       'Beskrivning',
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                            fontWeight: FontWeight.bold,
+                          ),
                     ),
                     const SizedBox(height: 8),
                     Text(
@@ -182,7 +183,9 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                           : const Icon(Icons.shopping_cart),
                       label: Text(
                         product.inStock
-                            ? (_isAddingToCart ? 'Lägger till...' : 'Lägg i kundvagn')
+                            ? (_isAddingToCart
+                                ? 'Lägger till...'
+                                : 'Lägg i kundvagn')
                             : 'Slut i lager',
                       ),
                       style: FilledButton.styleFrom(
@@ -317,25 +320,25 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         Text(
           'Detaljer',
           style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
+                fontWeight: FontWeight.bold,
+              ),
         ),
         const SizedBox(height: 8),
         ...details.map((entry) => Padding(
-          padding: const EdgeInsets.symmetric(vertical: 4),
-          child: Row(
-            children: [
-              SizedBox(
-                width: 120,
-                child: Text(
-                  entry.key,
-                  style: TextStyle(color: Colors.grey[600]),
-                ),
+              padding: const EdgeInsets.symmetric(vertical: 4),
+              child: Row(
+                children: [
+                  SizedBox(
+                    width: 120,
+                    child: Text(
+                      entry.key,
+                      style: TextStyle(color: Colors.grey[600]),
+                    ),
+                  ),
+                  Expanded(child: Text(entry.value)),
+                ],
               ),
-              Expanded(child: Text(entry.value)),
-            ],
-          ),
-        )),
+            )),
       ],
     );
   }

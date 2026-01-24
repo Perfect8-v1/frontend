@@ -1,12 +1,12 @@
 // lib/screens/main_screen.dart
 import 'package:flutter/material.dart';
-import '../services/auth_service.dart';
 import '../services/cart_service.dart';
 import 'product_list_screen.dart';
 import 'cart_screen.dart';
 import 'profile_screen.dart';
 import 'blog_list_screen.dart';
 import 'admin_screen.dart';
+import '../services/auth_service.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -31,7 +31,8 @@ class MainScreenState extends State<MainScreen> {
   Future<void> _loadCartCount() async {
     try {
       final cart = await _cartService.getCart();
-      debugPrint('🏷️ Cart loaded: itemCount=${cart.itemCount}, totalQuantity=${cart.totalQuantity}, items=${cart.items.length}');
+      debugPrint(
+          '🏷️ Cart loaded: itemCount=${cart.itemCount}, totalQuantity=${cart.totalQuantity}, items=${cart.items.length}');
       if (mounted) {
         // Use totalQuantity (sum of all item quantities) for badge
         setState(() => _cartItemCount = cart.totalQuantity);
