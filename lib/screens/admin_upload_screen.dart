@@ -1,5 +1,6 @@
 // lib/screens/admin_upload_screen.dart
-import 'dart:io';
+import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
@@ -19,7 +20,8 @@ class _AdminUploadScreenState extends State<AdminUploadScreen> {
   final _authService = AuthService();
   final _picker = ImagePicker();
 
-  File? _selectedImage;
+  XFile? _selectedFile;
+  Uint8List? _selectedBytes;
   String _category = 'products';
   bool _isUploading = false;
   String? _uploadResult;
@@ -36,15 +38,17 @@ class _AdminUploadScreenState extends State<AdminUploadScreen> {
     );
 
     if (image != null) {
+      final bytes = await image.readAsBytes();
       setState(() {
-        _selectedImage = File(image.path);
+        _selectedFile = image;
+        _selectedBytes = bytes;
         _uploadResult = null;
       });
     }
   }
 
   Future<void> _uploadImage() async {
-    if (_selectedImage == null) return;
+    if (_selectedFile == null || _selectedBytes == null) return;
 
     setState(() {
       _isUploading = true;
@@ -58,10 +62,11 @@ class _AdminUploadScreenState extends State<AdminUploadScreen> {
       // Add auth header
       request.headers['Authorization'] = 'Bearer ${_authService.token}';
 
-      // Add file
-      request.files.add(await http.MultipartFile.fromPath(
+      // Add file from bytes (works on Web + native)
+      request.files.add(http.MultipartFile.fromBytes(
         'file',
-        _selectedImage!.path,
+        _selectedBytes!,
+        filename: _selectedFile!.name,
       ));
 
       // Add category
@@ -76,7 +81,8 @@ class _AdminUploadScreenState extends State<AdminUploadScreen> {
           _uploadResult = 'Uppladdning lyckades!';
           _uploadedImages.insert(
               0, data['originalUrl'] ?? data['thumbnailUrl'] ?? '');
-          _selectedImage = null;
+          _selectedFile = null;
+          _selectedBytes = null;
         });
       } else {
         final error = jsonDecode(response.body);
@@ -165,11 +171,11 @@ class _AdminUploadScreenState extends State<AdminUploadScreen> {
                     color: Colors.grey[100],
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: _selectedImage != null
+                  child: _selectedBytes != null
                       ? ClipRRect(
                           borderRadius: BorderRadius.circular(8),
-                          child: Image.file(
-                            _selectedImage!,
+                          child: Image.memory(
+                            _selectedBytes!,
                             fit: BoxFit.cover,
                             width: double.infinity,
                           ),
@@ -197,7 +203,7 @@ class _AdminUploadScreenState extends State<AdminUploadScreen> {
             // Upload button
             FilledButton.icon(
               onPressed:
-                  _selectedImage != null && !_isUploading ? _uploadImage : null,
+                  _selectedFile != null && !_isUploading ? _uploadImage : null,
               icon: _isUploading
                   ? const SizedBox(
                       width: 20,

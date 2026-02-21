@@ -27,8 +27,8 @@ String? _toFullImageUrl(String? url) {
     return url.replaceFirst('http://', 'https://');
   }
 
-  // Relative URL - prepend base URL
-  return '${ApiConfig.imageUrl}$url';
+  // EFTER (rätt — ger /images/thumbnail/...):
+  return '${ApiConfig.baseUrl}$url';
 }
 
 /// Product model matching backend ProductResponse

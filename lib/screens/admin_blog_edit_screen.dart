@@ -1,7 +1,10 @@
 // lib/screens/admin_blog_edit_screen.dart
-import 'package:flutter/material.dart';
+import 'dart:io';
+import 'package:flutter/material.dart' hide ImageInfo;
+import 'package:image_picker/image_picker.dart';
 import '../models/blog_models.dart';
 import '../services/blog_service.dart';
+import '../services/image_service.dart';
 import '../services/auth_service.dart';
 import '../services/api_exception.dart';
 
@@ -19,6 +22,7 @@ class _AdminBlogEditScreenState extends State<AdminBlogEditScreen> {
   final _formKey = GlobalKey<FormState>();
   final _authService = AuthService();
   late final BlogService _blogService;
+  late final ImageService _imageService;
 
   final _titleController = TextEditingController();
   final _slugController = TextEditingController();
@@ -28,19 +32,28 @@ class _AdminBlogEditScreenState extends State<AdminBlogEditScreen> {
   bool _isSaving = false;
   String? _errorMessage;
 
+  // Image state
+  List<ImageInfo> _availableImages = [];
+  List<BlogImage> _selectedImages = [];
+  bool _isLoadingImages = false;
+
   bool get _isEditing => widget.post != null;
 
   @override
   void initState() {
     super.initState();
     _blogService = BlogService(_authService);
+    _imageService = ImageService(_authService);
 
     if (_isEditing) {
       _titleController.text = widget.post!.title;
       _slugController.text = widget.post!.slug;
       _contentController.text = widget.post!.content;
       _published = widget.post!.published;
+      _selectedImages = List.from(widget.post!.images);
     }
+
+    _loadAvailableImages();
   }
 
   @override
@@ -49,6 +62,28 @@ class _AdminBlogEditScreenState extends State<AdminBlogEditScreen> {
     _slugController.dispose();
     _contentController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadAvailableImages() async {
+    setState(() => _isLoadingImages = true);
+    try {
+      final blogImages = await _imageService.getImagesByCategory('blog').catchError((e) {
+        debugPrint('Blog images error: $e');
+        return <ImageInfo>[];
+      });
+      final productImages = await _imageService.getImagesByCategory('products').catchError((e) {
+        debugPrint('Product images error: $e');
+        return <ImageInfo>[];
+      });
+      debugPrint('Loaded ${blogImages.length} blog + ${productImages.length} product images');
+      setState(() {
+        _availableImages = [...blogImages, ...productImages];
+        _isLoadingImages = false;
+      });
+    } catch (e) {
+      debugPrint('Kunde inte ladda bilder: $e');
+      setState(() => _isLoadingImages = false);
+    }
   }
 
   /// Generate slug from title
@@ -61,6 +96,62 @@ class _AdminBlogEditScreenState extends State<AdminBlogEditScreen> {
         .replaceAll(RegExp(r'\s+'), '-')
         .replaceAll(RegExp(r'-+'), '-')
         .trim();
+  }
+
+  void _toggleImage(ImageInfo image) {
+    setState(() {
+      final existingIndex =
+          _selectedImages.indexWhere((s) => s.imageId == image.imageId);
+      if (existingIndex >= 0) {
+        _selectedImages.removeAt(existingIndex);
+      } else {
+        _selectedImages.add(BlogImage(
+          imageId: image.imageId!,
+          displayOrder: _selectedImages.length,
+        ));
+      }
+    });
+  }
+
+  bool _isImageSelected(ImageInfo image) {
+    return _selectedImages.any((s) => s.imageId == image.imageId);
+  }
+
+  Future<void> _uploadBlogImage() async {
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(source: ImageSource.gallery);
+    if (picked == null) return;
+
+    setState(() => _isLoadingImages = true);
+    try {
+      final file = File(picked.path);
+      final uploaded = await _imageService.uploadImage(
+        file,
+        picked.name,
+        category: 'blog',
+      );
+      // Auto-select the newly uploaded image
+      setState(() {
+        _availableImages.insert(0, uploaded);
+        _selectedImages.add(BlogImage(
+          imageId: uploaded.imageId!,
+          displayOrder: _selectedImages.length,
+        ));
+        _isLoadingImages = false;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Bilden laddades upp')),
+        );
+      }
+    } catch (e) {
+      setState(() => _isLoadingImages = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Uppladdning misslyckades: $e')),
+        );
+      }
+    }
   }
 
   Future<void> _save() async {
@@ -79,6 +170,7 @@ class _AdminBlogEditScreenState extends State<AdminBlogEditScreen> {
             ? _slugController.text.trim()
             : null,
         published: _published,
+        images: _selectedImages.isNotEmpty ? _selectedImages : null,
       );
 
       if (_isEditing) {
@@ -173,7 +265,6 @@ class _AdminBlogEditScreenState extends State<AdminBlogEditScreen> {
               validator: (v) =>
                   v == null || v.trim().isEmpty ? 'Titel krävs' : null,
               onChanged: (value) {
-                // Auto-generate slug if empty
                 if (_slugController.text.isEmpty) {
                   _slugController.text = _generateSlug(value);
                 }
@@ -192,7 +283,8 @@ class _AdminBlogEditScreenState extends State<AdminBlogEditScreen> {
                   icon: const Icon(Icons.refresh),
                   tooltip: 'Generera från titel',
                   onPressed: () {
-                    _slugController.text = _generateSlug(_titleController.text);
+                    _slugController.text =
+                        _generateSlug(_titleController.text);
                   },
                 ),
               ),
@@ -226,6 +318,10 @@ class _AdminBlogEditScreenState extends State<AdminBlogEditScreen> {
             ),
             const SizedBox(height: 24),
 
+            // Images section
+            _buildImageSection(),
+            const SizedBox(height: 24),
+
             // Save button
             SizedBox(
               height: 48,
@@ -248,6 +344,116 @@ class _AdminBlogEditScreenState extends State<AdminBlogEditScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildImageSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text(
+              'Bilder',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            if (_selectedImages.isNotEmpty) ...[
+              const SizedBox(width: 8),
+              Chip(
+                label: Text('${_selectedImages.length} valda'),
+                visualDensity: VisualDensity.compact,
+              ),
+            ],
+            const Spacer(),
+            OutlinedButton.icon(
+              onPressed: _isLoadingImages ? null : _uploadBlogImage,
+              icon: const Icon(Icons.upload, size: 18),
+              label: const Text('Ladda upp'),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+
+        if (_isLoadingImages)
+          const Padding(
+            padding: EdgeInsets.all(16),
+            child: Center(child: CircularProgressIndicator()),
+          )
+        else if (_availableImages.isEmpty)
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.grey[100],
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.grey[300]!),
+            ),
+            child: Column(
+              children: [
+                Icon(Icons.image_not_supported, color: Colors.grey[400], size: 32),
+                const SizedBox(height: 8),
+                Text(
+                  'Inga bilder uppladdade',
+                  style: TextStyle(color: Colors.grey[600]),
+                ),
+                const SizedBox(height: 8),
+                OutlinedButton.icon(
+                  onPressed: _loadAvailableImages,
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('Ladda om'),
+                ),
+              ],
+            ),
+          )
+        else
+          SizedBox(
+            height: 120,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: _availableImages.length,
+              separatorBuilder: (_, __) => const SizedBox(width: 8),
+              itemBuilder: (context, index) {
+                final image = _availableImages[index];
+                final selected = _isImageSelected(image);
+                return GestureDetector(
+                  onTap: () => _toggleImage(image),
+                  child: Container(
+                    width: 120,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: selected ? Theme.of(context).colorScheme.primary : Colors.grey[300]!,
+                        width: selected ? 3 : 1,
+                      ),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(6),
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          Image.network(
+                            ImageService.getThumbnailUrl(image.imageId!, 'MEDIUM'),
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => Container(
+                              color: Colors.grey[200],
+                              child: const Icon(Icons.broken_image),
+                            ),
+                          ),
+                          if (selected)
+                            Container(
+                              color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+                              child: const Center(
+                                child: Icon(Icons.check_circle, color: Colors.white, size: 32),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+      ],
     );
   }
 }

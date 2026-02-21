@@ -2,9 +2,9 @@
 import 'package:flutter/material.dart';
 import '../models/blog_models.dart';
 import '../services/blog_service.dart';
-import '../config/api_config.dart';
 import '../services/api_exception.dart';
 import '../services/auth_service.dart';
+import '../services/image_service.dart';
 
 /// Screen for viewing a single blog post
 class BlogPostScreen extends StatefulWidget {
@@ -148,7 +148,7 @@ class _BlogPostScreenState extends State<BlogPostScreen> {
                   return ClipRRect(
                     borderRadius: BorderRadius.circular(8),
                     child: Image.network(
-                      '${ApiConfig.imageUrl}/api/images/${image.imageId}/content/',
+                      ImageService.getThumbnailUrl(image.imageId, 'ORIGINAL'),
                       height: 200,
                       fit: BoxFit.cover,
                       errorBuilder: (_, __, ___) => Container(

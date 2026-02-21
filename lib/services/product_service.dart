@@ -85,7 +85,7 @@ class ProductService {
   }) async {
     final uri = Uri.parse('${ApiConfig.shopUrl}/api/products/search')
         .replace(queryParameters: {
-      'query': query,
+      'q': query,
       'page': page.toString(),
       'size': size.toString(),
     });

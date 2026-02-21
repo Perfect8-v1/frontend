@@ -9,6 +9,7 @@ import '../services/api_exception.dart';
 import '../services/auth_service.dart';
 import '../services/pdf_service.dart';
 import '../services/email_service.dart';
+import '../models/customer_models.dart' as cm;
 
 class CheckoutScreen extends StatefulWidget {
   final Cart cart;
@@ -42,6 +43,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   // Payment method
   String _paymentMethod = 'INVOICE';
 
+  // Track loaded address to avoid duplicates
+  cm.Address? _loadedAddress;
+
   @override
   void initState() {
     super.initState();
@@ -56,10 +60,11 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   Future<void> _loadCustomerProfile() async {
     try {
       final customer = await _customerService.getProfile();
+      debugPrint('👤 Addresses count: ${customer.addresses.length}');
+      debugPrint('👤 Default shipping: ${customer.defaultShippingAddress}');
 
       if (mounted) {
         setState(() {
-          // Fill in name
           if (customer.firstName != null) {
             _firstNameController.text = customer.firstName!;
           }
@@ -70,9 +75,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             _phoneController.text = customer.phoneNumber!;
           }
 
-          // Fill in address from default shipping address
           final address = customer.defaultShippingAddress;
           if (address != null) {
+            _loadedAddress = address;
             if (address.streetAddress != null) {
               _streetController.text = address.streetAddress!;
             }
@@ -82,7 +87,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             if (address.city != null) {
               _cityController.text = address.city!;
             }
-            // Use address phone if customer phone is empty
             if (_phoneController.text.isEmpty && address.phoneNumber != null) {
               _phoneController.text = address.phoneNumber!;
             }
@@ -99,6 +103,15 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     }
   }
 
+  /// Check if the address form has changed from what was loaded
+  bool _addressChanged() {
+    if (_loadedAddress == null) return true;
+    return _streetController.text != (_loadedAddress!.streetAddress ?? '') ||
+        _postalCodeController.text != (_loadedAddress!.postalCode ?? '') ||
+        _cityController.text != (_loadedAddress!.city ?? '') ||
+        _phoneController.text != (_loadedAddress!.phoneNumber ?? '');
+  }
+
   @override
   void dispose() {
     _firstNameController.dispose();
@@ -110,11 +123,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     super.dispose();
   }
 
-  String _buildAddressString() {
-    // Backend expects comma-separated format: "Street, City, State, PostalCode"
-    return '${_streetController.text}, ${_cityController.text}, Sverige, ${_postalCodeController.text}';
-  }
-
   Future<void> _placeOrder() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -124,32 +132,60 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     });
 
     try {
-      final order = await _orderService.createOrderFromCart(
+      // Steg 1: Spara adress BARA om den ändrats eller inte finns
+      if (_addressChanged()) {
+        debugPrint('📍 Address changed or new - saving...');
+        await _customerService.addAddress({
+          'addressType': 'SHIPPING',
+          'recipientName':
+              '${_firstNameController.text} ${_lastNameController.text}',
+          'streetAddress': _streetController.text,
+          'postalCode': _postalCodeController.text,
+          'city': _cityController.text,
+          'country': 'Sverige',
+          'countryCode': 'SE',
+          'phoneNumber': _phoneController.text,
+          'defaultShipping': true,
+        });
+      } else {
+        debugPrint('📍 Address unchanged - skipping save');
+      }
+
+      // Steg 2: Skapa order med adress
+      final order = await _orderService.createOrder(
         cart: widget.cart,
-        shippingAddress: _buildAddressString(),
         paymentMethod: _paymentMethod,
+        firstName: _firstNameController.text,
+        lastName: _lastNameController.text,
+        street: _streetController.text,
+        postalCode: _postalCodeController.text,
+        city: _cityController.text,
+        phone: _phoneController.text,
       );
 
-      // Clear cart after successful order
+      // Steg 3: Fyll i adress från formuläret om backend inte returnerade den
+      final orderWithAddress = _ensureOrderAddress(order);
+
+      // Clear cart
       await _cartService.clearCart();
 
-      // Send confirmation email (fire and forget - don't block UI)
+      // Send confirmation email (fire and forget)
       final customerName =
           '${_firstNameController.text} ${_lastNameController.text}';
       final customerEmail = _authService.email ?? '';
       if (customerEmail.isNotEmpty) {
         _emailService
-            .sendOrderConfirmation(order, customerEmail, customerName)
+            .sendOrderConfirmation(
+                orderWithAddress, customerEmail, customerName)
             .then((_) => debugPrint('📧 Orderbekräftelse skickad'))
             .catchError((e) => debugPrint('📧 Kunde inte skicka email: $e'));
       }
 
       if (mounted) {
-        // Show success and navigate to confirmation
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(
             builder: (context) => OrderConfirmationScreen(
-              order: order,
+              order: orderWithAddress,
               emailSent: customerEmail.isNotEmpty,
             ),
           ),
@@ -168,6 +204,47 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     }
   }
 
+  /// Fill order address from form if backend didn't return it
+  Order _ensureOrderAddress(Order order) {
+    if (order.shippingAddress.street.isNotEmpty) return order;
+
+    debugPrint('📍 Order missing address - filling from form');
+    final formAddress = Address(
+      firstName: _firstNameController.text,
+      lastName: _lastNameController.text,
+      street: _streetController.text,
+      postalCode: _postalCodeController.text,
+      city: _cityController.text,
+      country: 'Sverige',
+      phone: _phoneController.text,
+    );
+
+    return Order(
+      orderId: order.orderId,
+      orderNumber: order.orderNumber,
+      customerId: order.customerId,
+      customerName: order.customerName,
+      customerEmail: order.customerEmail,
+      status: order.status,
+      items: order.items,
+      subtotal: order.subtotal,
+      shipping: order.shipping,
+      tax: order.tax,
+      total: order.total,
+      currency: order.currency,
+      shippingAddress: formAddress,
+      billingAddress: formAddress,
+      paymentMethod: order.paymentMethod,
+      paymentStatus: order.paymentStatus,
+      trackingNumber: order.trackingNumber,
+      trackingUrl: order.trackingUrl,
+      notes: order.notes,
+      createdDate: order.createdDate,
+      shippedDate: order.shippedDate,
+      deliveredDate: order.deliveredDate,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -179,7 +256,6 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            // Error message
             if (_errorMessage != null) ...[
               Container(
                 padding: const EdgeInsets.all(12),
@@ -201,13 +277,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
               ),
               const SizedBox(height: 16),
             ],
-
-            // Order summary
             _buildSectionHeader('Din beställning'),
             _buildOrderSummary(),
             const SizedBox(height: 24),
-
-            // Shipping address
             _buildSectionHeader('Leveransadress'),
             if (_isLoadingProfile)
               const Padding(
@@ -217,13 +289,9 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             else
               _buildAddressForm(),
             const SizedBox(height: 24),
-
-            // Payment method
             _buildSectionHeader('Betalningssätt'),
             _buildPaymentMethod(),
             const SizedBox(height: 32),
-
-            // Place order button
             SizedBox(
               height: 50,
               child: FilledButton(
@@ -237,11 +305,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                           color: Colors.white,
                         ),
                       )
-                    : const Text('Lägg beställning',
-                        style: TextStyle(fontSize: 16)),
+                    : Text(
+                        'Lägg beställning (${widget.cart.totalAmount.round()} kr)'),
               ),
             ),
-            const SizedBox(height: 32),
           ],
         ),
       ),
@@ -250,7 +317,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
 
   Widget _buildSectionHeader(String title) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.only(bottom: 8),
       child: Text(
         title,
         style: Theme.of(context).textTheme.titleMedium?.copyWith(
@@ -263,22 +330,20 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   Widget _buildOrderSummary() {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(12),
         child: Column(
           children: [
             ...widget.cart.items.map((item) => Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.symmetric(vertical: 4),
                   child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Expanded(
                         child: Text(
-                          '${item.quantity}x ${item.productName}',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                          '${item.productName} x${item.quantity}',
+                          style: const TextStyle(fontSize: 14),
                         ),
                       ),
-                      Text('${item.totalPrice.round()} kr'),
+                      Text('${(item.unitPrice * item.quantity).round()} kr'),
                     ],
                   ),
                 )),
@@ -286,33 +351,10 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text('Delsumma'),
-                Text('${widget.cart.totalAmount.round()} kr'),
-              ],
-            ),
-            if (widget.cart.estimatedShipping != null &&
-                widget.cart.estimatedShipping! > 0) ...[
-              const SizedBox(height: 4),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text('Frakt'),
-                  Text('${widget.cart.estimatedShipping!.round()} kr'),
-                ],
-              ),
-            ],
-            const SizedBox(height: 8),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
                 const Text('Totalt',
-                    style:
-                        TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                Text(
-                  '${widget.cart.grandTotal.round()} kr',
-                  style: const TextStyle(
-                      fontWeight: FontWeight.bold, fontSize: 16),
-                ),
+                    style: TextStyle(fontWeight: FontWeight.bold)),
+                Text('${widget.cart.totalAmount.round()} kr',
+                    style: const TextStyle(fontWeight: FontWeight.bold)),
               ],
             ),
           ],
@@ -324,7 +366,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   Widget _buildAddressForm() {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(12),
         child: Column(
           children: [
             Row(
@@ -550,8 +592,6 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                 ),
               ),
               const SizedBox(height: 24),
-
-              // Print invoice button
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton.icon(
@@ -569,7 +609,6 @@ class _OrderConfirmationScreenState extends State<OrderConfirmationScreen> {
                 ),
               ),
               const SizedBox(height: 12),
-
               SizedBox(
                 width: double.infinity,
                 child: FilledButton(

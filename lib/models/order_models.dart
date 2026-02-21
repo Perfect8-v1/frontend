@@ -20,6 +20,8 @@ class Order {
   final int orderId;
   final String orderNumber;
   final int customerId;
+  final String customerName;
+  final String customerEmail;
   final OrderStatus status;
   final List<OrderItem> items;
   final double subtotal;
@@ -42,6 +44,8 @@ class Order {
     required this.orderId,
     required this.orderNumber,
     required this.customerId,
+    this.customerName = '',
+    this.customerEmail = '',
     required this.status,
     this.items = const [],
     required this.subtotal,
@@ -61,78 +65,74 @@ class Order {
     this.deliveredDate,
   });
 
-  factory Order.fromJson(Map<String, dynamic> json) => Order(
-    orderId: json['orderId'] ?? 0,
-    orderNumber: json['orderNumber'] ?? '',
-    customerId: json['customerId'] ?? 0,
-    status: OrderStatus.fromString(json['status'] ?? 'PENDING'),
-    items: (json['items'] as List<dynamic>?)
-        ?.map((e) => OrderItem.fromJson(e))
-        .toList() ?? [],
-    // Handle null values with safe casting
-    subtotal: (json['subtotal'] as num?)?.toDouble() ?? 0.0,
-    shipping: (json['shippingCost'] as num?)?.toDouble() ??
-              (json['shipping'] as num?)?.toDouble() ?? 0.0,
-    tax: (json['taxAmount'] as num?)?.toDouble() ??
-         (json['tax'] as num?)?.toDouble() ?? 0.0,
-    total: (json['totalAmount'] as num?)?.toDouble() ??
-           (json['total'] as num?)?.toDouble() ?? 0.0,
-    currency: json['currency'] ?? 'SEK',
-    // Address can be string or object from backend
-    shippingAddress: _parseAddress(json['shippingAddress']),
-    billingAddress: _parseAddress(json['billingAddress'] ?? json['shippingAddress']),
-    paymentMethod: json['paymentMethod'] ?? 'INVOICE',
-    paymentStatus: json['paymentStatus'] ?? 'PENDING',
-    trackingNumber: json['trackingNumber'],
-    trackingUrl: json['trackingUrl'],
-    notes: json['notes'],
-    createdDate: json['createdDate'] != null
-        ? DateTime.parse(json['createdDate'])
-        : DateTime.now(),
-    shippedDate: json['shippedDate'] != null
-        ? DateTime.parse(json['shippedDate'])
-        : null,
-    deliveredDate: json['deliveredDate'] != null
-        ? DateTime.parse(json['deliveredDate'])
-        : null,
-  );
-}
+  factory Order.fromJson(Map<String, dynamic> json) {
+    // Backend returns orderItems (not items)
+    final itemsList = json['orderItems'] ?? json['items'] ?? [];
+    final parsedItems = (itemsList as List<dynamic>)
+        .map((e) => OrderItem.fromJson(e as Map<String, dynamic>))
+        .toList();
 
-/// Parse address from either string or object format
-Address _parseAddress(dynamic addressData) {
-  if (addressData == null) {
-    return Address(
-      firstName: '',
-      lastName: '',
-      street: '',
-      postalCode: '',
-      city: '',
-      country: 'Sverige',
+    // Backend returns flat shipping fields, not an object
+    final shippingAddr = Address(
+      firstName: json['shippingFirstName'] ?? '',
+      lastName: json['shippingLastName'] ?? '',
+      street: json['shippingAddressLine1'] ?? '',
+      postalCode: json['shippingPostalCode'] ?? '',
+      city: json['shippingCity'] ?? '',
+      country: json['shippingCountry'] ?? 'Sverige',
+      phone: json['shippingPhone'],
+    );
+
+    // Billing = shipping for v1.0
+    final billingAddr = Address(
+      firstName: json['shippingFirstName'] ?? '',
+      lastName: json['shippingLastName'] ?? '',
+      street: json['shippingAddressLine1'] ?? '',
+      postalCode: json['shippingPostalCode'] ?? '',
+      city: json['shippingCity'] ?? '',
+      country: json['shippingCountry'] ?? 'Sverige',
+      phone: json['shippingPhone'],
+    );
+
+    return Order(
+      orderId: json['orderId'] ?? 0,
+      orderNumber: json['orderNumber'] ?? '',
+      customerId: json['customerId'] ?? 0,
+      customerName: json['customerName'] ?? '',
+      customerEmail: json['customerEmail'] ?? '',
+      status: OrderStatus.fromString(json['status'] ?? 'PENDING'),
+      items: parsedItems,
+      subtotal: (json['subtotal'] as num?)?.toDouble() ?? 0.0,
+      shipping: (json['shippingAmount'] as num?)?.toDouble() ??
+                (json['shippingCost'] as num?)?.toDouble() ?? 0.0,
+      tax: (json['taxAmount'] as num?)?.toDouble() ?? 0.0,
+      total: (json['totalAmount'] as num?)?.toDouble() ?? 0.0,
+      currency: json['currency'] ?? 'SEK',
+      shippingAddress: shippingAddr,
+      billingAddress: billingAddr,
+      paymentMethod: json['paymentMethod'] ?? 'INVOICE',
+      paymentStatus: json['paymentStatus'] ?? 'PENDING',
+      trackingNumber: json['trackingNumber'],
+      trackingUrl: json['trackingUrl'],
+      notes: json['notes'] ?? json['customerNotes'],
+      createdDate: json['createdDate'] != null
+          ? DateTime.parse(json['createdDate'])
+          : DateTime.now(),
+      shippedDate: json['shippedDate'] != null
+          ? DateTime.parse(json['shippedDate'])
+          : null,
+      deliveredDate: json['deliveredDate'] != null
+          ? DateTime.parse(json['deliveredDate'])
+          : null,
     );
   }
-
-  // If it's a string (backend returns comma-separated format)
-  if (addressData is String) {
-    final parts = addressData.split(', ');
-    return Address(
-      firstName: '',
-      lastName: '',
-      street: parts.isNotEmpty ? parts[0] : '',
-      city: parts.length > 1 ? parts[1] : '',
-      country: parts.length > 2 ? parts[2] : 'Sverige',
-      postalCode: parts.length > 3 ? parts[3] : '',
-    );
-  }
-
-  // If it's an object
-  return Address.fromJson(addressData as Map<String, dynamic>);
 }
 
 class OrderItem {
   final int orderItemId;
   final int productId;
   final String productName;
-  final String? variantName;
+  final String? productSku;
   final int quantity;
   final double unitPrice;
   final double subtotal;
@@ -141,7 +141,7 @@ class OrderItem {
     required this.orderItemId,
     required this.productId,
     required this.productName,
-    this.variantName,
+    this.productSku,
     required this.quantity,
     required this.unitPrice,
     required this.subtotal,
@@ -151,11 +151,12 @@ class OrderItem {
     orderItemId: json['orderItemId'] ?? 0,
     productId: json['productId'] ?? 0,
     productName: json['productName'] ?? '',
-    variantName: json['variantName'],
+    productSku: json['productSku'] ?? json['sku'],
     quantity: json['quantity'] ?? 1,
     unitPrice: (json['unitPrice'] as num?)?.toDouble() ?? 0.0,
     subtotal: (json['subtotal'] as num?)?.toDouble() ??
-              (json['totalPrice'] as num?)?.toDouble() ?? 0.0,
+              (json['totalPrice'] as num?)?.toDouble() ??
+              (json['price'] as num?)?.toDouble() ?? 0.0,
   );
 }
 
@@ -181,7 +182,7 @@ class Address {
   factory Address.fromJson(Map<String, dynamic> json) => Address(
     firstName: json['firstName'] ?? '',
     lastName: json['lastName'] ?? '',
-    street: json['street'] ?? json['streetAddress'] ?? '',
+    street: json['street'] ?? json['streetAddress'] ?? json['addressLine1'] ?? '',
     postalCode: json['postalCode'] ?? '',
     city: json['city'] ?? '',
     country: json['country'] ?? 'Sverige',
@@ -196,32 +197,5 @@ class Address {
     'city': city,
     'country': country,
     if (phone != null) 'phone': phone,
-  };
-}
-
-class CreateOrderRequest {
-  final Address shippingAddress;
-  final bool billingAddressSameAsShipping;
-  final Address? billingAddress;
-  final String paymentMethod;
-  final String? notes;
-
-  CreateOrderRequest({
-    required this.shippingAddress,
-    this.billingAddressSameAsShipping = true,
-    this.billingAddress,
-    required this.paymentMethod,
-    this.notes,
-  });
-
-  Map<String, dynamic> toJson() => {
-    'shippingAddress': shippingAddress.toJson(),
-    'billingAddress': {
-      'sameAsShipping': billingAddressSameAsShipping,
-      if (!billingAddressSameAsShipping && billingAddress != null)
-        ...billingAddress!.toJson(),
-    },
-    'paymentMethod': paymentMethod,
-    if (notes != null) 'notes': notes,
   };
 }

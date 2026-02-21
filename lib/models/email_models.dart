@@ -1,37 +1,55 @@
 // lib/models/email_models.dart
 
-/// Email request DTO matching backend EmailRequest
+/// Email request DTO matching backend API: POST /email/send
 class EmailRequest {
-  final String recipientEmail;
+  final String to;
   final String subject;
-  final String content;
-  final bool html;
-  final String? recipientName;
-  final String? replyTo;
-  final String? cc;
-  final String? bcc;
+  final String template;
+  final Map<String, dynamic> variables;
 
   EmailRequest({
-    required this.recipientEmail,
+    required this.to,
     required this.subject,
-    required this.content,
-    this.html = true,
-    this.recipientName,
-    this.replyTo,
-    this.cc,
-    this.bcc,
+    required this.template,
+    this.variables = const {},
   });
 
   Map<String, dynamic> toJson() => {
-        'recipientEmail': recipientEmail,
+        'to': to,
         'subject': subject,
-        'content': content,
-        'html': html,
-        if (recipientName != null) 'recipientName': recipientName,
-        if (replyTo != null) 'replyTo': replyTo,
-        if (cc != null) 'cc': cc,
-        if (bcc != null) 'bcc': bcc,
+        'template': template,
+        'variables': variables,
       };
+}
+
+/// Email log entry from GET /email/logs
+class EmailLog {
+  final int? id;
+  final String? to;
+  final String? subject;
+  final String? template;
+  final String? status;
+  final DateTime? sentDate;
+
+  EmailLog({
+    this.id,
+    this.to,
+    this.subject,
+    this.template,
+    this.status,
+    this.sentDate,
+  });
+
+  factory EmailLog.fromJson(Map<String, dynamic> json) => EmailLog(
+        id: json['id'],
+        to: json['to'],
+        subject: json['subject'],
+        template: json['template'],
+        status: json['status'],
+        sentDate: json['sentDate'] != null
+            ? DateTime.parse(json['sentDate'])
+            : null,
+      );
 }
 
 /// Order email DTO matching backend OrderEmailDTO

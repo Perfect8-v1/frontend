@@ -65,7 +65,7 @@ class _CartScreenState extends State<CartScreen> {
 
     try {
       final cart =
-          await _cartService.updateQuantity(item.productId, newQuantity);
+          await _cartService.updateQuantity(item.cartItemId, newQuantity);
       setState(() => _cart = cart);
       widget.onCartUpdated?.call();
     } on ApiException catch (e) {
@@ -77,7 +77,7 @@ class _CartScreenState extends State<CartScreen> {
 
   Future<void> _removeItem(CartItem item) async {
     try {
-      final cart = await _cartService.removeItem(item.productId);
+      final cart = await _cartService.removeItem(item.cartItemId);
       setState(() => _cart = cart);
       widget.onCartUpdated?.call();
       _showMessage('${item.productName} borttagen');

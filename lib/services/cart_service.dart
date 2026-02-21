@@ -70,7 +70,7 @@ class CartService {
   }
 
   /// Uppdaterar kvantiteten för en vara i varukorgen.
-  Future<Cart> updateQuantity(int productId, int quantity) async {
+  Future<Cart> updateQuantity(int cartItemId, int quantity) async {
     final url = '${ApiConfig.shopUrl}/api/cart/update';
     final headers = ApiService.headers;
 
@@ -78,7 +78,7 @@ class CartService {
       Uri.parse(url),
       headers: headers,
       body: jsonEncode({
-        'productId': productId,
+        'cartItemId': cartItemId,
         'quantity': quantity,
       }),
     );
@@ -92,9 +92,9 @@ class CartService {
     }
   }
 
-  /// Tar bort en produkt från varukorgen.
-  Future<Cart> removeItem(int productId) async {
-    final url = '${ApiConfig.shopUrl}/api/cart/remove/$productId';
+  /// Tar bort en vara från varukorgen.
+  Future<Cart> removeItem(int itemId) async {
+    final url = '${ApiConfig.shopUrl}/api/cart/remove/$itemId';
     final headers = ApiService.headers;
 
     final response = await http.delete(

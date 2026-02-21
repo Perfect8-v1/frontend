@@ -42,13 +42,17 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('${product.name} tillagd i kundvagnen'),
+          duration: const Duration(seconds: 3),
+          behavior: SnackBarBehavior.floating,
           action: SnackBarAction(
             label: 'Visa',
             onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const CartScreen()),
-              );
+              if (mounted) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const CartScreen()),
+                );
+              }
             },
           ),
         ),

@@ -13,112 +13,65 @@ class OrderService {
 
   OrderService(this._authService);
 
-  /// Skapa order från varukorg
-  Future<Order> createOrderFromCart({
+  /// POST /shop/api/orders
+  /// Creates an order from cart data with shipping address.
+  Future<Order> createOrder({
     required Cart cart,
-    required String shippingAddress,
-    String? billingAddress,
-    String? paymentMethod,
-    String? notes,
+    required String paymentMethod,
+    String? firstName,
+    String? lastName,
+    String? street,
+    String? postalCode,
+    String? city,
+    String? phone,
   }) async {
-    final orderItems = cart.items
-        .map((item) => {
-              'productId': item.productId,
-              'quantity': item.quantity,
-              'unitPrice': item.unitPrice,
-              'productName': item.productName,
-              'productSku': item.productSku,
-            })
-        .toList();
+    final url = '${ApiConfig.shopUrl}/api/orders';
 
-    final requestBody = {
-      'customerId': cart.customerId,
-      'orderItems': orderItems,
+    final body = {
+      'customerId': 0,
+      'orderItems': cart.items.map((item) => {
+        'productId': item.productId,
+        'quantity': item.quantity,
+        'unitPrice': item.unitPrice,
+        'productName': item.productName,
+        'productSku': item.productSku ?? '',
+      }).toList(),
       'subtotal': cart.totalAmount,
-      'taxAmount': cart.estimatedTax ?? 0,
+      'taxAmount': 0,
       'shippingCost': cart.estimatedShipping ?? 0,
-      'discountAmount': cart.discountAmount ?? 0,
       'totalAmount': cart.grandTotal,
       'currency': 'SEK',
-      'shippingAddress': shippingAddress,
-      'billingAddress': billingAddress ?? shippingAddress,
-      'paymentMethod': paymentMethod ?? 'INVOICE',
-      'notes': notes,
-      'source': 'MOBILE',
+      'paymentMethod': paymentMethod,
+      'source': 'WEB',
+      // Backend parses: parts[0]=addressLine1, parts[1]=city, parts[2]=state, parts[3]=postalCode
+      if (street != null)
+        'shippingAddress': '$street, $city, Sverige, $postalCode',
     };
 
-    // FIX: shopUrl och ingen trailing slash
-    final url = '${ApiConfig.shopUrl}/api/orders';
-    final body = jsonEncode(requestBody);
-
-    debugPrint('📦 OrderService.createOrder() - URL: $url');
+    debugPrint('OrderService.createOrder() - URL: $url');
+    debugPrint('OrderService.createOrder() - Body: ${jsonEncode(body)}');
 
     final response = await http.post(
       Uri.parse(url),
-      headers: {
-        ..._authService.authHeaders,
-        'Content-Type': 'application/json',
-      },
-      body: body,
+      headers: _authService.authHeaders,
+      body: jsonEncode(body),
     );
 
-    debugPrint(
-        '📦 OrderService.createOrder() - Status: ${response.statusCode}');
+    debugPrint('OrderService.createOrder() - Status: ${response.statusCode}');
+    debugPrint('OrderService.createOrder() - Response: ${response.body}');
 
     if (response.statusCode == 200 || response.statusCode == 201) {
       final json = jsonDecode(response.body);
       final data = json['data'] ?? json;
-      final order = Order.fromJson(data);
-
-      // Fallback: Om backend inte returnerar artiklar, använd varukorgens artiklar
-      if (order.items.isEmpty && cart.items.isNotEmpty) {
-        return Order(
-          orderId: order.orderId,
-          orderNumber: order.orderNumber,
-          customerId: order.customerId,
-          status: order.status,
-          items: cart.items
-              .map((item) => OrderItem(
-                    orderItemId: 0,
-                    productId: item.productId,
-                    productName: item.productName,
-                    quantity: item.quantity,
-                    unitPrice: item.unitPrice,
-                    subtotal: item.totalPrice,
-                  ))
-              .toList(),
-          subtotal: order.subtotal,
-          shipping: order.shipping,
-          tax: order.tax,
-          total: order.total,
-          currency: order.currency,
-          shippingAddress: order.shippingAddress,
-          billingAddress: order.billingAddress,
-          paymentMethod: order.paymentMethod,
-          paymentStatus: order.paymentStatus,
-          trackingNumber: order.trackingNumber,
-          trackingUrl: order.trackingUrl,
-          notes: order.notes,
-          createdDate: order.createdDate,
-          shippedDate: order.shippedDate,
-          deliveredDate: order.deliveredDate,
-        );
-      }
-      return order;
+      return Order.fromJson(data);
     } else {
       throw ApiException.fromResponse(response);
     }
   }
 
-  /// Hämta inloggad kunds ordrar
-  Future<List<Order>> getMyOrders({int page = 0, int size = 20}) async {
-    final userId = _authService.userId;
-    if (userId == null) {
-      throw ApiException(statusCode: 401, message: 'Inte inloggad');
-    }
-
-    final url =
-        '${ApiConfig.shopUrl}/api/orders/customer/$userId?page=$page&size=$size';
+  /// GET /shop/api/orders/my-orders
+  Future<List<Order>> getMyOrders() async {
+    final url = '${ApiConfig.shopUrl}/api/orders/my-orders';
     final response = await http.get(
       Uri.parse(url),
       headers: _authService.authHeaders,
@@ -127,7 +80,7 @@ class OrderService {
     if (response.statusCode == 200) {
       final json = jsonDecode(response.body);
       final data = json['data'] ?? json;
-      final content = data['content'] ?? data;
+      final content = data is List ? data : (data['content'] ?? data);
       if (content is List) {
         return content.map((item) => Order.fromJson(item)).toList();
       }
@@ -137,9 +90,8 @@ class OrderService {
     }
   }
 
-  /// Hämta specifik order via ID
+  /// GET /shop/api/orders/{id}
   Future<Order> getOrder(int orderId) async {
-    // FIX: shopUrl och ingen trailing slash
     final url = '${ApiConfig.shopUrl}/api/orders/$orderId';
 
     final response = await http.get(
@@ -156,14 +108,12 @@ class OrderService {
     }
   }
 
-  /// Avbryt order
-  Future<Order> cancelOrder(int orderId, {String? reason}) async {
-    // FIX: shopUrl och ingen trailing slash innan query params
-    final uri = Uri.parse('${ApiConfig.shopUrl}/api/orders/$orderId/cancel')
-        .replace(queryParameters: reason != null ? {'reason': reason} : null);
+  /// POST /shop/api/orders/{id}/cancel
+  Future<Order> cancelOrder(int orderId) async {
+    final url = '${ApiConfig.shopUrl}/api/orders/$orderId/cancel';
 
     final response = await http.post(
-      uri,
+      Uri.parse(url),
       headers: _authService.authHeaders,
     );
 
