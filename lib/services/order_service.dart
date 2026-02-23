@@ -24,10 +24,23 @@ class OrderService {
     String? postalCode,
     String? city,
     String? phone,
+    String? country,
   }) async {
     final url = '${ApiConfig.shopUrl}/api/orders';
 
+    // Build address fields - individual fields (Option A: backend reads these)
+    final Map<String, dynamic> addressFields = {};
+    if (street != null && street.isNotEmpty) {
+      addressFields['shippingAddressLine1'] = street;
+      addressFields['shippingCity'] = city ?? '';
+      addressFields['shippingState'] = '';               // Sverige har inga states
+      addressFields['shippingPostalCode'] = postalCode ?? '';
+      addressFields['shippingCountry'] = country ?? 'Sverige';
+    }
+
     final body = {
+      // NOTE: customerId sätts av backend via JWT - skicka 0 eller utelämna
+      // Kontrollera att din OrderController hämtar customerId från JWT, inte från body
       'customerId': 0,
       'orderItems': cart.items.map((item) => {
         'productId': item.productId,
@@ -43,9 +56,7 @@ class OrderService {
       'currency': 'SEK',
       'paymentMethod': paymentMethod,
       'source': 'WEB',
-      // Backend parses: parts[0]=addressLine1, parts[1]=city, parts[2]=state, parts[3]=postalCode
-      if (street != null)
-        'shippingAddress': '$street, $city, Sverige, $postalCode',
+      ...addressFields,
     };
 
     debugPrint('OrderService.createOrder() - URL: $url');
